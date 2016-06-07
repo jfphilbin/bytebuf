@@ -1,0 +1,17 @@
+name: byte_buf
+description: Buffer utilites for reading and writing byte arrays (Uint8Lists).
+version: 0.3.0
+author: Jim Philbin <mailto:jfphilbin@gmail.com>
+homepage: https://github.com/OpenDICOMweb/byte_buf
+
+environment:
+  sdk: '>=1.0.0 <2.0.0'
+
+dependencies:
+  ascii:
+    path: C:/odw/utilities/ascii
+  integer:
+    path: C:/odw/utilities/integer
+
+dev_dependencies:
+  test: '>=0.12.0 <0.13.0'
