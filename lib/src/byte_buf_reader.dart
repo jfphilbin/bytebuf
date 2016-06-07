@@ -36,8 +36,12 @@ class ByteBufReader {
   /// The current read position in the buffer.
   int rdIdx;
 
+  /// Returns a [new] [ByteArray] [length] bytes long.
+  factory ByteBufReader(Uint8List bytes, [start = 0, end, endianness]) =>
+      new ByteBufReader._(bytes,  start, end, endianness);
+
   /// Constructor
-  ByteBufReader(Uint8List bytes, [start = 0, end, endianness])
+  ByteBufReader._(Uint8List bytes, [start = 0, end, endianness])
       : end = (end == null) ? bytes.length : end,
         endianness = (endianness == null) ? Endianness.HOST_ENDIAN : endianness,
         start = start,
@@ -69,7 +73,11 @@ class ByteBufReader {
     return new ByteBufReader(bytes,  0, bytes.length);
   }
 
-  ByteBufReader sublist(int start, [int end]) => new ByteBufReader(buf, start, end);
+  /// Returns a new [ByteBufReader] that is a copy of [this] from [start]
+  /// inclusive to [end] exclusive, unless [start == 0] and [end == null]
+  /// in which case [this] is returned.
+  ByteBufReader sublist(int start, [int end]) =>
+      ((start == 0) && (end == null)) ? this : new ByteBufReader(buf, start, end);
 
   //TODO: this needs to check [i]
   int operator [](int i) => buf[i];

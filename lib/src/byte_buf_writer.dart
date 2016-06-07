@@ -110,8 +110,13 @@ class ByteBufWriter {
     return new ByteBufWriter._(bytes, 0, bytes.length);
   }
 
-  /// Returns a new [ByteBufWriter] that is a copy of [this] from [start] inclusive to [end] exclusive.
-  ByteBufWriter sublist(int start, [int end]) => new ByteBufWriter._(buf, start, end);
+  //TODO: document that if start==0 and end == null returns [this]
+  /// Returns a new [ByteBufWriter] that is a copy of [this] from [start]
+  /// inclusive to [end] exclusive, unless [start == 0] and [end == null]
+  /// in which case [this] is returned.
+  ByteBufWriter sublist(int start, [int end]) =>
+      ((start == 0) && (end == null)) ? this : new ByteBufWriter._(buf, start, end);
+
 
   /// Returns a new [ByteBufWriter] that is a view of [this] from [start] inclusive to [end] exclusive.
   ByteBufWriter subview(int start, [int end]) => new ByteBufWriter._(buf, start, end);
