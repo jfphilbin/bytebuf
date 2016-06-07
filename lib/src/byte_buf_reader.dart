@@ -8,8 +8,7 @@ library odw.sdk.utilities.byte_array.byte_buf_reader;
 import 'dart:typed_data';
 
 import 'package:ascii/ascii.dart';
-
-import 'package:byte_array/src/constants.dart';
+import 'package:byte_buf/src/constants.dart';
 
 //TODO: update [checkRange]
 //TODO: rename to Uint8Buffer (or Uint8Reader, Uint8Writer, Uint8Buffer)
@@ -25,9 +24,9 @@ import 'package:byte_array/src/constants.dart';
 //TODO: edit all doc comments below.
 class ByteBufReader {
   /// The Endianness can be set before using
-  Endianness endianness = Endianness.LITTLE_ENDIAN;
+  Endianness endianness = Endianness.HOST_ENDIAN;
   /// The underlying [Uint8List] object.
-  final Uint8List buffer;
+  final Uint8List buf;
   /// The underlying [ByteData] object.
   final ByteData bd;
   /// The index at which reading starts.
@@ -38,11 +37,12 @@ class ByteBufReader {
   int rdIdx;
 
   /// Constructor
-  ByteBufReader(Uint8List bytes, [start = 0, end])
+  ByteBufReader(Uint8List bytes, [start = 0, end, endianness])
       : end = (end == null) ? bytes.length : end,
+        endianness = (endianness == null) ? Endianness.HOST_ENDIAN : endianness,
         start = start,
         rdIdx = start,
-        buffer = bytes,
+        buf = bytes,
         bd = bytes.buffer.asByteData() {
     if ((start + length) > bytes.lengthInBytes)
       throw "Invalid indexes (start= $start, end=$end) - ByteArray is only ${bytes.lengthInBytes} long.";
@@ -65,17 +65,17 @@ class ByteBufReader {
   }
 
   factory ByteBufReader.view(ByteBufReader buf, [start = 0, int length]) {
-    Uint8List bytes = buf.buffer;
+    Uint8List bytes = buf.buf;
     return new ByteBufReader(bytes,  0, bytes.length);
   }
 
-  ByteBufReader sublist(int start, [int end]) => new ByteBufReader(buffer, start, end);
+  ByteBufReader sublist(int start, [int end]) => new ByteBufReader(buf, start, end);
 
   //TODO: this needs to check [i]
-  int operator [](int i) => buffer[i];
+  int operator [](int i) => buf[i];
 
   //TODO: this needs to check [i] and [val]
-  operator []=(int i, int val) => buffer[i] = val;
+  operator []=(int i, int val) => buf[i] = val;
 
 
   int get length => end - start;
@@ -119,14 +119,14 @@ class ByteBufReader {
   }
 
   /// Returns an unsigned 8-bit [int]. [offset] is an absolute offset
-  /// in [buffer].
+  /// in [buf].
   int getUint8(int offset) {
     checkRange(offset, uint8NBytes, 1, "getUint8");
     return bd.getUint8(offset);
   }
 
   /// Returns an unsigned 8-bit [int] from the current [rdIdx]
-  /// in [buffer] and increments the [rdIdx]  by 1.
+  /// in [buf] and increments the [rdIdx]  by 1.
   /// Throws an error if [rdIdx] is out of range.
   int readUint8() {
     int value = getUint8(rdIdx);
@@ -135,14 +135,14 @@ class ByteBufReader {
   }
 
   /// Returns a [Uint8List] of length [lengthInBytes]. [offset] i
-  /// s an absolute offset in [buffer].
+  /// s an absolute offset in [buf].
   List<int> getUint8List(int offset, int lengthInBytes) {
     checkRange(offset, uint8NBytes, lengthInBytes, "getUint8List");
-    return buffer.buffer.asUint8List(offset, offset + lengthInBytes);
+    return buf.buffer.asUint8List(offset, offset + lengthInBytes);
   }
 
   /// Reads a [Uint8List] of length [lengthInBytes] from the current
-  /// [rdIdx] in [buffer] and increments the [rdIdx] by [lengthInBytes].
+  /// [rdIdx] in [buf] and increments the [rdIdx] by [lengthInBytes].
   /// Throws an error if [rdIdx] is out of range.
   List<int> readUint8List(int lengthInBytes) {
     List<int> value = getUint8List(rdIdx, lengthInBytes);
@@ -150,7 +150,7 @@ class ByteBufReader {
     return value;
   }
 
-  /// [offset] is an absolute offset in the [buffer]. Returns an unsigned 8 bit integer.
+  /// [offset] is an absolute offset in the [buf]. Returns an unsigned 8 bit integer.
   /// Throws an error if [rdIdx] is out of reange.
   int getInt8(int offset) {
     checkRange(offset, 1, 1, "getInt8");
@@ -165,14 +165,14 @@ class ByteBufReader {
   }
 
   /// Returns an [Int8List] of length [lengthInBytes]. [offset]
-  /// is an absolute offset in [buffer].
+  /// is an absolute offset in [buf].
   List<int> getInt8List(int offset, int lengthInBytes) {
     checkRange(offset, 1, lengthInBytes, "getInt8List");
-    return buffer.buffer.asInt8List(offset, offset + lengthInBytes);
+    return buf.buffer.asInt8List(offset, offset + lengthInBytes);
   }
 
   /// Returns an [Int8List] of length [lengthInBytes] from the current
-  /// [rdIdx] in [buffer] and increments the [rdIdx] by [lengthInBytes].
+  /// [rdIdx] in [buf] and increments the [rdIdx] by [lengthInBytes].
   /// Throws an error if [rdIdx] is out of range.
   List<int> readInt8List(int lengthInBytes) {
     List<int> value = getInt8List(rdIdx, lengthInBytes);
@@ -180,7 +180,7 @@ class ByteBufReader {
     return value;
   }
 
-  /// Gets 16 bits at the absolute [offset] in the [buffer]. Returns the unsigned 16
+  /// Gets 16 bits at the absolute [offset] in the [buf]. Returns the unsigned 16
   ///  bit value as an [int].  Throws an error if [rdIdx] is out of reange.
   int getUint16(int offset) {
     checkRange(offset, 1, 2, "getUint16");
@@ -197,14 +197,14 @@ class ByteBufReader {
   }
 
   /// Returns an [Uint8List] of length [lengthInBytes]. [offset]
-  /// is an absolute offset in [buffer].
+  /// is an absolute offset in [buf].
   List<int> getUint16List(int offset, int lengthInBytes) {
     checkRange(offset, 2, lengthInBytes, "getUint16List");
-    return buffer.buffer.asUint16List(offset, offset + lengthInBytes);
+    return buf.buffer.asUint16List(offset, offset + lengthInBytes);
   }
 
   /// Returns an [Uint8List] of length [lengthInBytes] from the current
-  /// [rdIdx] in [buffer] and increments the [rdIdx] by [lengthInBytes].
+  /// [rdIdx] in [buf] and increments the [rdIdx] by [lengthInBytes].
   /// Throws an error if [rdIdx] is out of range.
   List<int> readUint16List(int lengthInBytes) {
     List<int> value = getUint16List(rdIdx, lengthInBytes);
@@ -213,7 +213,7 @@ class ByteBufReader {
   }
 
   /// Returns an signed 16-bit [int] at the absolute [offset] in
-  /// [buffer].  Throws an error if [rdIdx] is out of range.
+  /// [buf].  Throws an error if [rdIdx] is out of range.
   int getInt16(int offset) {
     checkRange(offset, 2, 2, "getInt16");
     return bd.getInt16(offset, endianness);
@@ -228,14 +228,14 @@ class ByteBufReader {
   }
 
   /// Returns an [Int16List] of length [lengthInBytes]. [offset]
-  /// is an absolute offset in [buffer].
+  /// is an absolute offset in [buf].
   List<int> getInt16List(int offset, int lengthInBytes) {
     checkRange(offset, 2, lengthInBytes, "getInt16List");
-    return buffer.buffer.asInt16List(offset, offset + lengthInBytes);
+    return buf.buffer.asInt16List(offset, offset + lengthInBytes);
   }
 
   /// Returns an [Int16List] of length [lengthInBytes] from the current
-  /// [rdIdx] in [buffer] and increments the [rdIdx] by [lengthInBytes].
+  /// [rdIdx] in [buf] and increments the [rdIdx] by [lengthInBytes].
   /// Throws an error if [rdIdx] is out of range.
   List<int> readInt16List(int lengthInBytes) {
     List<int> value = getInt16List(rdIdx, lengthInBytes);
@@ -256,14 +256,14 @@ class ByteBufReader {
   }
 
   /// Returns an [Uint32List] of length [lengthInBytes]. [offset]
-  /// is an absolute offset in [buffer].
+  /// is an absolute offset in [buf].
   List<int> getUint32List(int offset, int lengthInBytes) {
     checkRange(offset, 4, lengthInBytes, "getUint32List");
-    return buffer.buffer.asUint32List(offset, offset + lengthInBytes);
+    return buf.buffer.asUint32List(offset, offset + lengthInBytes);
   }
 
   /// Returns an [Uint32List] of length [lengthInBytes] from the current
-  /// [rdIdx] in [buffer] and increments the [rdIdx] by [lengthInBytes].
+  /// [rdIdx] in [buf] and increments the [rdIdx] by [lengthInBytes].
   /// Throws an error if [rdIdx] is out of range.
   List<int> readUint32List(int lengthInBytes) {
     List<int> value = getUint32List(rdIdx, lengthInBytes);
@@ -284,14 +284,14 @@ class ByteBufReader {
   }
 
   /// Returns an [Int32List] of length [lengthInBytes]. [offset]
-  /// is an absolute offset in [buffer].
+  /// is an absolute offset in [buf].
   List<int> getInt32List(int offset, int lengthInBytes) {
     checkRange(offset, 4, lengthInBytes, "getInt32List");
-    return buffer.buffer.asInt32List(offset, offset + lengthInBytes);
+    return buf.buffer.asInt32List(offset, offset + lengthInBytes);
   }
 
   /// Returns an [Int32List] of length [lengthInBytes] from the current
-  /// [rdIdx] in [buffer] and increments the [rdIdx] by [lengthInBytes].
+  /// [rdIdx] in [buf] and increments the [rdIdx] by [lengthInBytes].
   /// Throws an error if [rdIdx] is out of range.
   List<int> readInt32List(int lengthInBytes) {
     List<int> value = getUint32List(rdIdx, lengthInBytes);
@@ -312,14 +312,14 @@ class ByteBufReader {
   }
 
   /// Returns an [Uint64List] of length [lengthInBytes]. [offset]
-  /// is an absolute offset in [buffer].
+  /// is an absolute offset in [buf].
   List<int> getUint64List(int offset, int lengthInBytes) {
     checkRange(offset, 8, lengthInBytes, "getUint64List");
-    return buffer.buffer.asUint64List(offset, offset + lengthInBytes);
+    return buf.buffer.asUint64List(offset, offset + lengthInBytes);
   }
 
   /// Returns an [Uint64List] of length [lengthInBytes] from the current
-  /// [rdIdx] in [buffer] and increments the [rdIdx] by [lengthInBytes].
+  /// [rdIdx] in [buf] and increments the [rdIdx] by [lengthInBytes].
   /// Throws an error if [rdIdx] is out of range.
   List<int> readUint64List(int lengthInBytes) {
     List<int> value = getUint64List(rdIdx, lengthInBytes);
@@ -340,14 +340,14 @@ class ByteBufReader {
   }
 
   /// Returns an [Int64List] of length [lengthInBytes]. [offset]
-  /// is an absolute offset in [buffer].
+  /// is an absolute offset in [buf].
   List<int> getInt64List(int offset, int lengthInBytes) {
     checkRange(offset, 8, lengthInBytes, "getInt64List");
-    return buffer.buffer.asInt64List(offset, offset + lengthInBytes);
+    return buf.buffer.asInt64List(offset, offset + lengthInBytes);
   }
 
   /// Returns an [Int64List] of length [lengthInBytes] from the current
-  /// [rdIdx] in [buffer] and increments the [rdIdx] by [lengthInBytes].
+  /// [rdIdx] in [buf] and increments the [rdIdx] by [lengthInBytes].
   /// Throws an error if [rdIdx] is out of range.
   List<int> readInt64List(int lengthInBytes) {
     List<int> value = getInt64List(rdIdx, lengthInBytes);
@@ -374,14 +374,14 @@ class ByteBufReader {
   double readFloat() => readFloat32();
 
   /// Returns an [Float32List] of length [lengthInBytes]. [offset]
-  /// is an absolute offset in [buffer].
+  /// is an absolute offset in [buf].
   List<double> getFloat32List(int offset, int lengthInBytes) {
     checkRange(offset, 4, lengthInBytes, "getFloat32List");
-    return buffer.buffer.asFloat32List(offset, offset + lengthInBytes);
+    return buf.buffer.asFloat32List(offset, offset + lengthInBytes);
   }
 
   /// Returns an [Float32List] of length [lengthInBytes] from the current
-  /// [rdIdx] in [buffer] and increments the [rdIdx] by [lengthInBytes].
+  /// [rdIdx] in [buf] and increments the [rdIdx] by [lengthInBytes].
   /// Throws an error if [rdIdx] is out of range.
   List<double> readFloat32List(int lengthInBytes) {
     List<double> value = getFloat32List(rdIdx, lengthInBytes);
@@ -409,14 +409,14 @@ class ByteBufReader {
   double readDouble() => readFloat64();
 
   /// Returns an [Float64List] of length [lengthInBytes]. [offset]
-  /// is an absolute offset in [buffer].
+  /// is an absolute offset in [buf].
   List<double> getFloat64List(int offset, int lengthInBytes) {
     checkRange(offset, 8, lengthInBytes, "getFloat64List");
-    return buffer.buffer.asFloat64List(offset, offset + lengthInBytes);
+    return buf.buffer.asFloat64List(offset, offset + lengthInBytes);
   }
 
   /// Returns an [Float64List] of length [lengthInBytes] from the current
-  /// [rdIdx] in [buffer] and increments the [rdIdx] by [lengthInBytes].
+  /// [rdIdx] in [buf] and increments the [rdIdx] by [lengthInBytes].
   /// Throws an error if [rdIdx] is out of range.
   List<double> readFloat64List(int lengthInBytes) {
     List<double> value = getFloat64List(rdIdx, lengthInBytes);
@@ -450,8 +450,8 @@ class ByteBufReader {
   */
   //Enhancement: Which is better [getFixedString] or [getFixedString1]?  Does it matter?
   String getString(int offset, int length) {
-    checkRange(offset, length, 1, "getString");
-    Uint8List charCodes = buffer.buffer.asUint8List(offset, length);
+    checkRange(offset, 1, length, "getString");
+    Uint8List charCodes = buf.buffer.asUint8List(offset, length);
     var s = new String.fromCharCodes(charCodes);
     if ((s.codeUnitAt(length - 1) == kSpace) || (s.codeUnitAt(length - 1) == kNull))
       return s.substring(0, length - 1);

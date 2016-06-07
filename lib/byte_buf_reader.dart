@@ -3,7 +3,8 @@
 // that can be found in the LICENSE file.
 // Author: Jim Philbin <jfphilbin@gmail.edu>
 // See the AUTHORS file for other contributors.
+library odw.sdk.utilities.byte_buf.byte_buf_reader;
 
-void main() {
+/// Utilities for reading and writing [Uint8List] buffers
 
-}
+export 'src/byte_buf_reader.dart';

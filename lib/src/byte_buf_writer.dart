@@ -5,9 +5,10 @@
 // See the AUTHORS file for other contributors.
 library odw.sdk.utilities.byte_array.byte_buf_writer;
 
+import 'dart:convert';
 import 'dart:typed_data';
 
-import 'package:byte_array/src/constants.dart';
+import 'package:byte_buf/src/constants.dart';
 
 
 //TODO: rename to Uint8Buffer (or Uint8Reader, Uint8Writer, Uint8Buffer)
@@ -33,7 +34,7 @@ class ByteBufWriter {
   Endianness endianness = Endianness.HOST_ENDIAN;
 
   /// The underlying byte array, i.e. [Uint8List] object.
-  final Uint8List bytes;
+  final Uint8List buf;
 
   /// The underlying [ByteData] object.
   final ByteData bd;
@@ -47,22 +48,24 @@ class ByteBufWriter {
   /// The current write position in the buffer.
   int wrIdx;
 
+  //TODO: figure out a good default size for this.
   /// Creates a new Uint8Writer [length] bytes long.
-  factory ByteBufWriter([int length = 1000]) {
+  factory ByteBufWriter([int length = 256]) {
     if (length < 0) throw "Invalid length = $length";
     return new ByteBufWriter._(new Uint8List(length));
   }
 
   /// Internal Constructor
   /// Creates a new [ByteBufWriter] from an existing [Uint8List].  Changes to the
-  /// underlying list are visable to the [this].  The created [ByteBufWriter] will begin
+  /// underlying list are visible to the [this].  The created [ByteBufWriter] will begin
   /// at index [start] and end at index [end].
-  ByteBufWriter._(Uint8List list, [int start = 0, int end])
-      : end = (end == null) ? list.length : end,
+  ByteBufWriter._(Uint8List bytes, [start = 0, end, endianness])
+      : end = (end == null) ? bytes.length : end,
+        endianness = (endianness == null) ? Endianness.HOST_ENDIAN : endianness,
         start = 0,
         wrIdx = 0,
-        bytes = list,
-        bd = list.buffer.asByteData() {
+        buf = bytes,
+        bd = bytes.buffer.asByteData() {
     if ((start < 0) || (end <= start)) throw "Invalid values: start=$start, end=$end";
   }
 
@@ -70,17 +73,17 @@ class ByteBufWriter {
   /// Changes in the [Uint8Winter] will be visible in the [ByteBufWriter.view] and vice versa.
   /// If the [offsetInBytes] index of the region is not specified, it defaults to zero
   /// (the first byte in the [ByteBufWriter]). If the length is not specified, it defaults
-  /// to null, which indicates that the view extends to the end of the [ByteBufWriter.bytes].
+  /// to null, which indicates that the view extends to the end of the [ByteBufWriter.buf].
   /// Throws RangeError if [offsetInBytes] or [length] are negative, or if
   /// [offsetInBytes] + ([length] * [elementSizeInBytes]) is greater than the length of buffer.
   factory ByteBufWriter.view(ByteBufWriter writer, [offsetInBytes = 0, int length]) {
-    length = (length == null) ? writer.bytes.lengthInBytes : length;
-    if ((offsetInBytes < 0) || (length < 0) || (offsetInBytes + length > writer.bytes.lengthInBytes))
+    length = (length == null) ? writer.buf.lengthInBytes : length;
+    if ((offsetInBytes < 0) || (length < 0) || (offsetInBytes + length > writer.buf.lengthInBytes))
       throw new RangeError("Invalid offsetInBytes=$offsetInBytes or length=$length");
-    return new ByteBufWriter._(writer.bytes, offsetInBytes, offsetInBytes + length);
+    return new ByteBufWriter._(writer.buf, offsetInBytes, offsetInBytes + length);
   }
 
-  /// Creates an [Uint8Winter.view] of the specified region in [bytes].
+  /// Creates an [Uint8Winter.view] of the specified region in [buf].
   /// Changes in the [Int8writer] will be visible in the [Uint8Write.view] and vice versa.
   /// If the [offsetInBytes] index of the region is not specified, it defaults to zero
   /// (the first byte in the byte buffer). If the length is not specified, it defaults
@@ -108,14 +111,14 @@ class ByteBufWriter {
   }
 
   /// Returns a new [ByteBufWriter] that is a copy of [this] from [start] inclusive to [end] exclusive.
-  ByteBufWriter sublist(int start, [int end]) => new ByteBufWriter._(bytes, start, end);
+  ByteBufWriter sublist(int start, [int end]) => new ByteBufWriter._(buf, start, end);
 
   /// Returns a new [ByteBufWriter] that is a view of [this] from [start] inclusive to [end] exclusive.
-  ByteBufWriter subview(int start, [int end]) => new ByteBufWriter._(bytes, start, end);
+  ByteBufWriter subview(int start, [int end]) => new ByteBufWriter._(buf, start, end);
 
-  int operator [](int i) => bytes[i];
+  int operator [](int i) => buf[i];
 
-  operator []=(int i, int val) => bytes[i] = val;
+  operator []=(int i, int val) => buf[i] = val;
 
   int get length => end - start;
 
@@ -168,32 +171,32 @@ class ByteBufWriter {
  */
   }
 
-  /// Stores an unsigned 8-bit [value] at [offset] is the offset in [bytes]
+  /// Stores an unsigned 8-bit [value] at [offset] is the offset in [buf]
   void setUint8(int offset, int value) {
     checkRange(offset, uint8NBytes, 1, "setUint8");
     bd.setUint8(offset, value);
   }
 
-  /// Stores an unsigned 8-bit [value] at [wrIdx] in [bytes] and increments the [wrIdx]  by 1.
+  /// Stores an unsigned 8-bit [value] at [wrIdx] in [buf] and increments the [wrIdx]  by 1.
   void writeUint8(int value) {
     setUint8(wrIdx, value);
     wrIdx ++;
   }
 
-  /// Stores a [List<int>] at [offset] in [bytes].
+  /// Stores a [List<int>] at [offset] in [buf].
   void setUint8List(int offset, List<int> list) {
     checkRange(offset, uint8NBytes, list.length, "setUint8List");
     for (int i = 0; i < list.length; i++)
       bd.setUint8(offset + i, list[i]);
   }
 
-  /// Stores a [List<int>] at [wrIdx] in [bytes] and increments the [wrIdx] by [List] [length].
+  /// Stores a [List<int>] at [wrIdx] in [buf] and increments the [wrIdx] by [List] [length].
   void writeUint8List(List<int> list) {
     setUint8List(wrIdx, list);
     wrIdx += list.length;
   }
 
-  /// [offset] is an absolute offset in the [bytes]. Returns an unsigned 8 bit integer.
+  /// [offset] is an absolute offset in the [buf]. Returns an unsigned 8 bit integer.
   /// Throws an error if [wrIdx] is out of reange.
   void setInt8(int offset, int value) {
     checkRange(offset, int8NBytes, 1, "setInt8");
@@ -207,7 +210,7 @@ class ByteBufWriter {
   }
 
   /// Returns an [Int8List] of length [lengthInBytes]. [offset]
-  /// is an absolute offset in [bytes].
+  /// is an absolute offset in [buf].
   void setInt8List(int offset, List<int> list) {
     checkRange(offset, int8NBytes, list.length, "setInt8List");
     for (int i = 0; i < list.length; i++)
@@ -215,14 +218,14 @@ class ByteBufWriter {
   }
 
   /// Returns an [Int8List] of length [lengthInBytes] from the current
-  /// [wrIdx] in [bytes] and increments the [wrIdx] by [lengthInBytes].
+  /// [wrIdx] in [buf] and increments the [wrIdx] by [lengthInBytes].
   /// Throws an error if [wrIdx] is out of range.
   void writeInt8List(List<int> list) {
     setInt8List(wrIdx, list);
     wrIdx += list.length;
   }
 
-  /// Sets 16 bits at the [offset] in [bytes] to [value].
+  /// Sets 16 bits at the [offset] in [buf] to [value].
   /// Throws an error if [wrIdx] is out of range.
   void setUint16(int offset, int value) {
     checkRange(offset, uint16NBytes, 1, "setUint16");
@@ -236,7 +239,7 @@ class ByteBufWriter {
     wrIdx += 2;
   }
 
-  /// Writes the [List]<int> at [offset] in [bytes].
+  /// Writes the [List]<int> at [offset] in [buf].
   void setUint16List(int offset, List<int> list) {
     checkRange(offset, uint16NBytes, list.length, "setUint16List");
     for (int i = 0; i < list.length; i++)
@@ -244,7 +247,7 @@ class ByteBufWriter {
   }
 
   /// Returns an [Uint8List] of length [lengthInBytes] from the current
-  /// [wrIdx] in [bytes] and increments the [wrIdx] by [lengthInBytes].
+  /// [wrIdx] in [buf] and increments the [wrIdx] by [lengthInBytes].
   /// Throws an error if [wrIdx] is out of range.
   void writeUint16List(List<int> list) {
     for (int i = 0; i < list.length; i++)
@@ -253,7 +256,7 @@ class ByteBufWriter {
   }
 
   /// Writes a signed 16-bit [int] at the [offset] in
-  /// [bytes].  Throws an error if [wrIdx] is out of range.
+  /// [buf].  Throws an error if [wrIdx] is out of range.
   void setInt16(int offset, int value) {
     checkRange(offset, int16NBytes, 1, "setInt16");
     bd.setInt16(offset, value, endianness);
@@ -267,7 +270,7 @@ class ByteBufWriter {
   }
 
   /// Returns an [Int16List] of length [lengthInBytes]. [offset]
-  /// is an absolute offset in [bytes].
+  /// is an absolute offset in [buf].
   void setInt16List(int offset, List<int> list) {
     checkRange(offset, int16NBytes, list.length, "setInt16List");
     for (int i = 0; i < list.length; i++)
@@ -275,7 +278,7 @@ class ByteBufWriter {
   }
 
   /// Returns an [Int16List] of length [lengthInBytes] from the current
-  /// [wrIdx] in [bytes] and increments the [wrIdx] by [lengthInBytes].
+  /// [wrIdx] in [buf] and increments the [wrIdx] by [lengthInBytes].
   /// Throws an error if [wrIdx] is out of range.
   void writeInt16List(List<int> list) {
     setInt16List(wrIdx, list);
@@ -293,7 +296,7 @@ class ByteBufWriter {
     wrIdx += 4;
   }
 
-  /// Write a [Uint32List] at [offset] in [bytes].
+  /// Write a [Uint32List] at [offset] in [buf].
   void setUint32List(int offset, List<int> list) {
     checkRange(offset, uint32NBytes, list.length, "setUint32List");
     for (int i = 0; i < list.length; i++)
@@ -301,7 +304,7 @@ class ByteBufWriter {
   }
 
   /// Returns an [Uint32List] of length [lengthInBytes] from the current
-  /// [wrIdx] in [bytes] and increments the [wrIdx] by [lengthInBytes].
+  /// [wrIdx] in [buf] and increments the [wrIdx] by [lengthInBytes].
   /// Throws an error if [wrIdx] is out of range.
   void writeUint32List(List<int> list) {
     setUint32List(wrIdx, list);
@@ -320,7 +323,7 @@ class ByteBufWriter {
   }
 
   /// Returns an [Int32List] of length [lengthInBytes]. [offset]
-  /// is an absolute offset in [bytes].
+  /// is an absolute offset in [buf].
   void setInt32List(int offset, List<int> list) {
     checkRange(offset, int32NBytes, list.length, "setInt32List");
     for (int i = 0; i < list.length; i++)
@@ -329,7 +332,7 @@ class ByteBufWriter {
   }
 
   /// Returns an [Int32List] of length [lengthInBytes] from the current
-  /// [wrIdx] in [bytes] and increments the [wrIdx] by [lengthInBytes].
+  /// [wrIdx] in [buf] and increments the [wrIdx] by [lengthInBytes].
   /// Throws an error if [wrIdx] is out of range.
   void writeInt32List(List<int> list) {
     setUint32List(wrIdx, list);
@@ -349,7 +352,7 @@ class ByteBufWriter {
   }
 
   /// Returns an [Uint64List] of length [lengthInBytes]. [offset]
-  /// is an absolute offset in [bytes].
+  /// is an absolute offset in [buf].
   void setUint64List(int offset, List<int> list) {
     checkRange(offset, uint64NBytes, list.length, "setUint64List");
     for (int i = 0; i < list.length; i++)
@@ -358,7 +361,7 @@ class ByteBufWriter {
   }
 
   /// Returns an [Uint64List] of length [lengthInBytes] from the current
-  /// [wrIdx] in [bytes] and increments the [wrIdx] by [lengthInBytes].
+  /// [wrIdx] in [buf] and increments the [wrIdx] by [lengthInBytes].
   /// Throws an error if [wrIdx] is out of range.
   void writeUint64List(List<int> list) {
     setUint64List(wrIdx, list);
@@ -377,7 +380,7 @@ class ByteBufWriter {
   }
 
   /// Returns an [Int64List] of length [lengthInBytes]. [offset]
-  /// is an absolute offset in [bytes].
+  /// is an absolute offset in [buf].
   void setInt64List(int offset, List<int> list) {
     checkRange(offset, int16NBytes, list.length * int64NBytes, "setInt64List");
     for (int i = 0; i < list.length; i++)
@@ -386,7 +389,7 @@ class ByteBufWriter {
   }
 
   /// Returns an [Int64List] of length [lengthInBytes] from the current
-  /// [wrIdx] in [bytes] and increments the [wrIdx] by [lengthInBytes].
+  /// [wrIdx] in [buf] and increments the [wrIdx] by [lengthInBytes].
   /// Throws an error if [wrIdx] is out of range.
   void writeInt64List(List<int> list) {
     setInt64List(wrIdx, list);
@@ -411,7 +414,7 @@ class ByteBufWriter {
   void writeFloat(double value) => writeFloat32(value);
 
   /// Returns an [Float32List] of length [lengthInBytes]. [offset]
-  /// is an absolute offset in [bytes].
+  /// is an absolute offset in [buf].
   void setFloat32List(int offset, List<double> list) {
     checkRange(offset, float32NBytes, list.length, "setFloat32List");
     for (int i = 0; i < list.length; i++)
@@ -420,7 +423,7 @@ class ByteBufWriter {
   }
 
   /// Returns an [Float32List] of length [lengthInBytes] from the current
-  /// [wrIdx] in [bytes] and increments the [wrIdx] by [lengthInBytes].
+  /// [wrIdx] in [buf] and increments the [wrIdx] by [lengthInBytes].
   /// Throws an error if [wrIdx] is out of range.
   void writeFloat32List(List<double> list) {
     setFloat32List(wrIdx, list);
@@ -445,7 +448,7 @@ class ByteBufWriter {
   void writeDouble(double value) => writeFloat64(value);
 
   /// Returns an [Float64List] of length [lengthInBytes]. [offset]
-  /// is an absolute offset in [bytes].
+  /// is an absolute offset in [buf].
   void setFloat64List(int offset, List<double> list) {
     checkRange(offset, float32NBytes, list.length, "setFloat64List");
     for (int i = 0; i < list.length; i++)
@@ -454,7 +457,7 @@ class ByteBufWriter {
   }
 
   /// Returns an [Float64List] of length [lengthInBytes] from the current
-  /// [wrIdx] in [bytes] and increments the [wrIdx] by [lengthInBytes].
+  /// [wrIdx] in [buf] and increments the [wrIdx] by [lengthInBytes].
   /// Throws an error if [wrIdx] is out of range.
   void writeFloat64List(List<double> list) {
     setFloat64List(wrIdx, list);
@@ -487,20 +490,20 @@ class ByteBufWriter {
   //Enhancement: Which is better [setFixedString] or [setFixedString1]?  Does it matter?
   int setString(int offset, String s) {
     // Get Code Units first, because of multichar codeUnits in UTF-8
-    Uint8List chars = s.codeUnits;
-    checkRange(offset, stringNBytes, chars.length, "setString");
+    Uint8List chars = UTF8.encode(s);
+    checkRange(offset, utf8NBytes, chars.length, "setString");
     for (int i = 0; i < chars.length; i++)
-      bytes[offset + i] = chars[i];
+      buf[offset + i] = chars[i];
     return chars.length;
   }
 
-  /// Stores [String] as of 8 bit UTF-8 code points into [bytes].
+  /// Stores [String] as of 8 bit UTF-8 code points into [buf].
   void writeString(String s) {
     wrIdx += setString(wrIdx, s);
   }
 
   //TODO: figure out the best default separator.
-  /// Stores a [List<String>] into [bytes], with each [String] separated by [separator],
+  /// Stores a [List<String>] into [buf], with each [String] separated by [separator],
   /// and returns the number of UTF-8 code points stored.  [separator] can be 0 or more characters.
   int setStringList(int offset, List<String> list, [String separator = r"\"]) {
     //TODO: checkRange for enough space
@@ -511,7 +514,7 @@ class ByteBufWriter {
     return nChars;
   }
 
-  /// Stores a [List] of [String]s into [bytes] as UTF-8 code points.  The backslash (reverse solidus)
+  /// Stores a [List] of [String]s into [buf] as UTF-8 code points.  The backslash (reverse solidus)
   /// code point is used to separate the [String]s.
   /// the [String]s.
   void writeStringList(List<String> list, [String separator = r"\"]) {
@@ -520,7 +523,7 @@ class ByteBufWriter {
 
   //TODO: If default [separator] above is not [r"\"], then move to DcmUint8_writer;
   // otherwise, delete the next two methods.
-  /// Stores a [List<String>] into [bytes], with each [String] separated by [separator],
+  /// Stores a [List<String>] into [buf], with each [String] separated by [separator],
   /// and returns the number of UTF-8 code points stored.
   int setDcmStringList(int offset, List<String> list) {
     int nChars = 0;
@@ -531,7 +534,7 @@ class ByteBufWriter {
   }
 
   //TODO: Move to DcmUint8_writer
-  /// Stores a [List] of [String]s into [bytes].  The backslash (reverse solidus)
+  /// Stores a [List] of [String]s into [buf].  The backslash (reverse solidus)
   /// characters separates the [String]s. [wrIdx] is incremented by the number of
   /// code points written.
   void writeDcmStringList(List<String> list) {
