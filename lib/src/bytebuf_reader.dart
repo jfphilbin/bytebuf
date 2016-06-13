@@ -3,133 +3,107 @@
 // that can be found in the LICENSE file.
 // Author: Jim Philbin <jfphilbin@gmail.edu>
 // See the AUTHORS file for other contributors.
-library odw.sdk.base.utils.bytebuf;
+library odw.sdk.utilities.byte_array.byte_buf_reader;
 
 import 'dart:typed_data';
 
 import 'package:ascii/ascii.dart';
 
+import 'constants.dart';
+import 'utils.dart';
+
+//TODO: update [checkRange]
 //TODO: rename to Uint8Buffer (or Uint8Reader, Uint8Writer, Uint8Buffer)
 //TODO: add write functionality
 
-int _checkView(ByteBuffer buffer, int offset, int length) {
-  length = (length == null) ? buffer.lengthInBytes : length;
-  int end = offset + length;
-  if (!_valid(buffer, offset, end))
-    throw new ArgumentError("Invalid Indices into buffer: "
-        "bytes = $buffer, offset = $offset, length = $length");
-  return end;
-}
-
-int _checkSublist(ByteBuffer buffer, int start, int end) {
-  end = (end == null) ? buffer.lengthInBytes : end;
-  if (!_valid(buffer, start, end))
-    throw new ArgumentError("Invalid Indices into buffer: "
-        "bytes = $buffer, start = $start, end = $end");
-  return end;
-}
-
-// *** should only be called by _checkView or _checkSublist ***
-bool _valid(ByteBuffer buffer, int start, int end) =>
-  ((start < 0) || (end <= start) || (end > buffer.lengthInBytes));
-
 //TODO: edit comment
-/// A library for reading values from a [Uint8List], aka [ByteBuf]
+/// A library for reading values from a [Uint8List], aka [ByteBufReader]
 ///
-/// Supports reading in both BIG_ENDIAN and LITTLE_ENDIAN. The default
+/// Supports reading in both BIG_ENDIAN and LITTLE_ENDIAN byte arrays. The default
 /// Endianness is the endianness of the host [this] is running on, aka HOST_ENDIAN.
-/// All read* methods advance the [position] by the number of bytes read.
+/// All read* methods advance the [_readIndex] by the number of bytes read.
 
 //TODO: edit all doc comments below.
-class ByteBuf {
+class ByteBufReader {
   /// The Endianness can be set before using
-  Endianness endianness = Endianness.LITTLE_ENDIAN;
-
+  Endianness endianness = Endianness.HOST_ENDIAN;
   /// The underlying [ByteBuffer].
   final ByteBuffer _buffer;
-  /// A [Uint8List] view of [buffer].
+  /// The [Uint8List] view.
   final Uint8List _bytes;
-
-  /// A [ByteData] view of [buffer].
+  /// The [ByteData] view.
   final ByteData _bd;
-
-  /// The index at which the [buffer] [slice] starts.
-  final int _start;
-
-  /// The index of the last byte + 1 of the [buffer] [slice];
-  final int _end;
-
-  /// The current read position in [this].
+  /// The index at which reading starts.
+  int _start;
+  /// The index of the last byte + 1;
+  int _end;
+  /// The current read position in the buffer.
   int _readIndex;
 
-  /// The current write position in [this].
-  int _writeIndex;
-
-/*
-  static Uint8List _getEmptyBuffer(int length) {
-    if ((length >= 0)) throw "Invalid Length: $length";
-    return new Uint8List(length);
-  }
-*/
-  factory ByteBuf([int length = 1024]) {
-    if (length < 0) throw new ArgumentError('Invalid Length: $length');
-    var bytes = new Uint8List(length);
-    return new ByteBuf._(bytes.buffer, 0, length);
+  /// Returns a [new] [ByteArray] [length] bytes long.
+  factory ByteBufReader(Uint8List bytes, [int offset = 0, int length]) {
+    int end = checkView(bytes.buffer, offset, length);
+    return new ByteBufReader._(bytes.buffer, offset, end);
   }
 
+  //TODO: doesn't handle Endiannes should it?
   /// Constructs a [new] [ByteArray] of [length]. The default length is 1024.
-  ByteBuf._(ByteBuffer buffer, int offset, length)
+  ByteBufReader._(ByteBuffer buffer, int offset, int length)
       : _buffer = buffer,
         _bytes = buffer.asUint8List(offset, length),
         _bd = buffer.asByteData(offset, length),
         _start = offset,
-        _end = offset + length;
+        _end = offset + length,
+        _readIndex = 0;
 
-  factory ByteBuf.fromByteBuf(ByteBuf bytes, [int offset = 0, int length]) {
-    int end = _checkView(bytes._buffer, offset, length);
-    return new ByteBuf._(bytes._buffer, offset, end);
+ /* TODO: needed?
+  /// Returns a [new] [ByteBufReader] with [length] = end created from a [ByteBuffer][length] bytes long.
+  factory ByteBufReader.fromByteBuf(ByteBuf bytes, [int start = 0, int length]) {
+    Uint8List bytes = _buffer.asUint8List(start, length);
+    return new ByteBufReader._(bytes.buffer,  0, bytes.length);
   }
 
-  factory ByteBuf.view(ByteBuf bytes, [offset = 0, int length]) {
-    int end = _checkView(bytes._buffer, offset, length);
-    return new ByteBuf._(bytes._buffer, offset, end);
+  factory ByteBufReader.fromBytes(Uint8List bytes, [start = 0, int length]) {
+    return new ByteBufReader(bytes.buffer,  0, bytes.length);
+  }
+  */
+
+  factory ByteBufReader.view(ByteBufReader bytes, [int offset = 0, int length]) {
+    checkView(bytes._buffer, offset, length);
+    return new ByteBufReader._(bytes._buffer,  offset, length);
   }
 
-  /// Returns a [new] [ByteBuf] with from [start] to [end].
-  ByteBuf slice([start = 0, int end]) {
-    _checkView(_buffer, start, end);
-    return new ByteBuf._(_buffer, start, end);
-  }
+  ByteBufReader slice([int start = 0, int length]) =>
+    new ByteBufReader._(_buffer,  0, length);
 
-  ByteBuf sublist(int start, [int end]) {
-    _checkSublist(_buffer, start, end);
-    return new ByteBuf._(_buffer, start, end - start);
-  }
+  /// Returns a new [ByteBufReader] that is a copy of [this] from [start]
+  /// inclusive to [end] exclusive, unless [start == 0] and [end == null]
+  /// in which case [this] is returned.
+  ByteBufReader sublist(int start, [int end]) =>
+      ((start == 0) && (end == null)) ? this : new ByteBufReader(_bytes, start, end);
 
-  int operator [](int i)=> _bytes[i];
+  //TODO: this needs to check [i]
+  int operator [](int i) => _bytes[i];
 
-  void operator []=(int i, int val) {
-    _bytes[i] = val;
-  }
+  //TODO: this needs to check [i] and [val]
+  operator []=(int i, int val) => _bytes[i] = val;
 
   int get length => _end - _start;
 
-  int get readCapacity => _writeIndex - _readIndex;
-
-  int get writeCapacity => _end - _writeIndex;
+  int get remaining => _end - _readIndex;
 
   bool get isEmpty => _readIndex >= _end;
 
   bool get isNotEmpty => !isEmpty;
 
   int seek(int n) {
-    checkRange(_readIndex, n, 1, "seek");
+    checkRange(_readIndex, kByteLength, n, "seek");
     return _readIndex += n;
   }
 
   int getLimit(int lengthInBytes) {
     int localLimit = _readIndex + lengthInBytes;
-    if (localLimit > _end) throw "length $lengthInBytes too long";
+    if(localLimit > _end) throw "length $lengthInBytes too long";
     return localLimit;
   }
 
@@ -143,21 +117,23 @@ class ByteBuf {
   int checkLimit(int index) => (index >= _end) ? _end : index;
 
   void checkRange(int offset, int unitLength, int lengthInBytes, String caller) {
-    if ((lengthInBytes ~/ unitLength) != 0)
+    print('checkRange: offset =$offset, unitLength=$unitLength, lengthInBytes=$lengthInBytes, caller=$caller');
+    if ((lengthInBytes % unitLength) != 0)
       throw '$caller: Invalid Length=$lengthInBytes for UnitLength=$unitLength';
-    int index = offset + (unitLength * lengthInBytes);
-    if (index < _start) {
-      throw '$caller: _readIndex cannot be less than 0';
+    print('offset=$offset');
+    if(offset < _start) {
+      throw '$caller: offset cannot be less than 0: offset = $offset';
     }
-    if (index > _end) {
-      throw '$caller: attempt to read past end of buffer';
+    int end = offset + lengthInBytes;
+    if (end > _end) {
+      throw '$caller: attempt to read past end of buffer: end = $end';
     }
   }
 
   /// Returns an unsigned 8-bit [int]. [offset] is an absolute offset
   /// in [_bytes].
   int getUint8(int offset) {
-    checkRange(offset, 1, 1, "getUint8");
+    checkRange(offset, kUint8NBytes, kUint8NBytes, "getUint8");
     return _bd.getUint8(offset);
   }
 
@@ -173,8 +149,8 @@ class ByteBuf {
   /// Returns a [Uint8List] of length [lengthInBytes]. [offset] i
   /// s an absolute offset in [_bytes].
   List<int> getUint8List(int offset, int lengthInBytes) {
-    checkRange(offset, 1, lengthInBytes, "getUint8List");
-    return _bytes.buffer.asUint8List(offset, offset + lengthInBytes);
+    checkRange(offset, kUint8NBytes, lengthInBytes, "getUint8List");
+    return _bytes.buffer.asUint8List(offset, lengthInBytes);
   }
 
   /// Reads a [Uint8List] of length [lengthInBytes] from the current
@@ -189,7 +165,7 @@ class ByteBuf {
   /// [offset] is an absolute offset in the [_bytes]. Returns an unsigned 8 bit integer.
   /// Throws an error if [_readIndex] is out of reange.
   int getInt8(int offset) {
-    checkRange(offset, 1, 1, "Int8");
+    checkRange(offset, kInt8NBytes, kInt8NBytes, "getInt8");
     return _bd.getInt8(offset);
   }
 
@@ -203,8 +179,8 @@ class ByteBuf {
   /// Returns an [Int8List] of length [lengthInBytes]. [offset]
   /// is an absolute offset in [_bytes].
   List<int> getInt8List(int offset, int lengthInBytes) {
-    checkRange(offset, 1, lengthInBytes, "getInt8List");
-    return _bytes.buffer.asInt8List(offset, offset + lengthInBytes);
+    checkRange(offset, kInt8NBytes, lengthInBytes, "getInt8List");
+    return _bytes.buffer.asInt8List(offset, lengthInBytes);
   }
 
   /// Returns an [Int8List] of length [lengthInBytes] from the current
@@ -219,12 +195,12 @@ class ByteBuf {
   /// Gets 16 bits at the absolute [offset] in the [_bytes]. Returns the unsigned 16
   ///  bit value as an [int].  Throws an error if [_readIndex] is out of reange.
   int getUint16(int offset) {
-    checkRange(offset, 1, 2, "getUint16");
+    checkRange(offset, kUint16NBytes, kUint16NBytes, "getUint16");
     return _bd.getUint16(offset, endianness);
   }
 
   /// Reads the 16 bits at the current [_readIndex] as an unsigned integer, increments
-  /// the _readIndex by 2, and returns an [int].  Throws an error if [_readIndex] is out
+  /// the position by 2, and returns an [int].  Throws an error if [_readIndex] is out
   /// of range.
   int readUint16() {
     int value = getUint16(_readIndex);
@@ -235,8 +211,8 @@ class ByteBuf {
   /// Returns an [Uint8List] of length [lengthInBytes]. [offset]
   /// is an absolute offset in [_bytes].
   List<int> getUint16List(int offset, int lengthInBytes) {
-    checkRange(offset, 2, lengthInBytes, "getUint16List");
-    return _bytes.buffer.asUint16List(offset, offset + lengthInBytes);
+    checkRange(offset, kUint16NBytes, lengthInBytes, "getUint16List");
+    return _bytes.buffer.asUint16List(offset, lengthInBytes ~/ kUint16NBytes);
   }
 
   /// Returns an [Uint8List] of length [lengthInBytes] from the current
@@ -251,7 +227,7 @@ class ByteBuf {
   /// Returns an signed 16-bit [int] at the absolute [offset] in
   /// [_bytes].  Throws an error if [_readIndex] is out of range.
   int getInt16(int offset) {
-    checkRange(offset, 2, 2, "getInt16");
+    checkRange(offset, kInt16NBytes, kInt16NBytes, "getInt16");
     return _bd.getInt16(offset, endianness);
   }
 
@@ -266,8 +242,8 @@ class ByteBuf {
   /// Returns an [Int16List] of length [lengthInBytes]. [offset]
   /// is an absolute offset in [_bytes].
   List<int> getInt16List(int offset, int lengthInBytes) {
-    checkRange(offset, 2, lengthInBytes, "getInt16List");
-    return _bytes.buffer.asInt16List(offset, offset + lengthInBytes);
+    checkRange(offset, kInt16NBytes, lengthInBytes, "getInt16List");
+    return _bytes.buffer.asInt16List(offset, lengthInBytes ~/ kInt16NBytes);
   }
 
   /// Returns an [Int16List] of length [lengthInBytes] from the current
@@ -280,11 +256,11 @@ class ByteBuf {
   }
 
   int getUint32(int offset) {
-    checkRange(offset, 1, 4, "Uint32");
+    checkRange(offset, kUint32NBytes, kUint32NBytes, "getUint32");
     return _bd.getUint32(offset, endianness);
   }
 
-  /// Reads a 32 bit unsigned integer from the [ByteBuf].
+  /// Reads a 32 bit unsigned integer from the byte array.
   int readUint32() {
     int value = getUint32(_readIndex);
     _readIndex += 4;
@@ -294,8 +270,8 @@ class ByteBuf {
   /// Returns an [Uint32List] of length [lengthInBytes]. [offset]
   /// is an absolute offset in [_bytes].
   List<int> getUint32List(int offset, int lengthInBytes) {
-    checkRange(offset, 4, lengthInBytes, "getUint32List");
-    return _bytes.buffer.asUint32List(offset, offset + lengthInBytes);
+    checkRange(offset, kUint32NBytes, lengthInBytes, "getUint32List");
+    return _bytes.buffer.asUint32List(offset, lengthInBytes ~/ kUint32NBytes);
   }
 
   /// Returns an [Uint32List] of length [lengthInBytes] from the current
@@ -308,11 +284,11 @@ class ByteBuf {
   }
 
   int getInt32(int offset) {
-    checkRange(offset, 4, 4, "Int32");
+    checkRange(offset, kInt32NBytes, kInt32NBytes, "getInt32");
     return _bd.getInt32(offset, endianness);
   }
 
-  /// Reads a 32 bit signed integer from the [ByteBuf].
+  /// Reads a 32 bit signed integer from the byte array.
   int readInt32() {
     int value = getInt32(_readIndex);
     _readIndex += 4;
@@ -322,25 +298,25 @@ class ByteBuf {
   /// Returns an [Int32List] of length [lengthInBytes]. [offset]
   /// is an absolute offset in [_bytes].
   List<int> getInt32List(int offset, int lengthInBytes) {
-    checkRange(offset, 4, lengthInBytes, "getInt32List");
-    return _bytes.buffer.asInt32List(offset, offset + lengthInBytes);
+    checkRange(offset, kInt32NBytes, lengthInBytes, "getInt32List");
+    return _bytes.buffer.asInt32List(offset, lengthInBytes ~/ kInt32NBytes);
   }
 
   /// Returns an [Int32List] of length [lengthInBytes] from the current
   /// [_readIndex] in [_bytes] and increments the [_readIndex] by [lengthInBytes].
   /// Throws an error if [_readIndex] is out of range.
   List<int> readInt32List(int lengthInBytes) {
-    List<int> value = getUint32List(_readIndex, lengthInBytes);
+    List<int> value = getInt32List(_readIndex, lengthInBytes);
     _readIndex += lengthInBytes;
     return value;
   }
 
   int getUint64(int offset) {
-    checkRange(offset, 8, 8, "Uint64");
+    checkRange(offset, kUint64NBytes, kUint64NBytes, "getUint64");
     return _bd.getUint64(offset, endianness);
   }
 
-  /// Reads a 32 bit unsigned integer from the [ByteBuf].
+  /// Reads a 32 bit unsigned integer from the byte array.
   int readUint64() {
     int value = getUint64(_readIndex);
     _readIndex += 8;
@@ -350,8 +326,8 @@ class ByteBuf {
   /// Returns an [Uint64List] of length [lengthInBytes]. [offset]
   /// is an absolute offset in [_bytes].
   List<int> getUint64List(int offset, int lengthInBytes) {
-    checkRange(offset, 8, lengthInBytes, "getUint64List");
-    return _bytes.buffer.asUint64List(offset, offset + lengthInBytes);
+    checkRange(offset, kUint64NBytes, lengthInBytes, "getUint64List");
+    return _bytes.buffer.asUint64List(offset, lengthInBytes ~/ kUint64NBytes);
   }
 
   /// Returns an [Uint64List] of length [lengthInBytes] from the current
@@ -364,11 +340,11 @@ class ByteBuf {
   }
 
   int getInt64(int offset) {
-    checkRange(offset, 8, 8, "Int64");
+    checkRange(offset, kInt64NBytes, kInt64NBytes, "getInt64");
     return _bd.getInt64(offset, endianness);
   }
 
-  /// Reads a 32 bit signed integer from the [ByteBuf].
+  /// Reads a 32 bit signed integer from the byte array.
   int readInt64() {
     int value = getInt64(_readIndex);
     _readIndex += 8;
@@ -378,8 +354,8 @@ class ByteBuf {
   /// Returns an [Int64List] of length [lengthInBytes]. [offset]
   /// is an absolute offset in [_bytes].
   List<int> getInt64List(int offset, int lengthInBytes) {
-    checkRange(offset, 8, lengthInBytes, "getInt64List");
-    return _bytes.buffer.asInt64List(offset, offset + lengthInBytes);
+    checkRange(offset, kInt64NBytes, lengthInBytes, "getInt64List");
+    return _bytes.buffer.asInt64List(offset, lengthInBytes ~/ kInt64NBytes);
   }
 
   /// Returns an [Int64List] of length [lengthInBytes] from the current
@@ -392,14 +368,14 @@ class ByteBuf {
   }
 
   double getFloat32(int offset) {
-    checkRange(offset, 4, 4, "Float32");
+    checkRange(offset, kFloat32NBytes, kFloat32NBytes, "getFloat32");
     return _bd.getFloat32(offset, endianness);
   }
 
   /// Synonym for getFloat32
   double getFLoat(int offset) => getFloat32(offset);
 
-  /// Reads a 32 bit floating point number from the [ByteBuf].
+  /// Reads a 32 bit floating point number from the byte array.
   double readFloat32() {
     double value = getFloat32(_readIndex);
     _readIndex += 4;
@@ -412,8 +388,8 @@ class ByteBuf {
   /// Returns an [Float32List] of length [lengthInBytes]. [offset]
   /// is an absolute offset in [_bytes].
   List<double> getFloat32List(int offset, int lengthInBytes) {
-    checkRange(offset, 4, lengthInBytes, "getFloat32List");
-    return _bytes.buffer.asFloat32List(offset, offset + lengthInBytes);
+    checkRange(offset, kFloat32NBytes, lengthInBytes, "getFloat32List");
+    return _bytes.buffer.asFloat32List(offset, lengthInBytes ~/ kFloat32NBytes);
   }
 
   /// Returns an [Float32List] of length [lengthInBytes] from the current
@@ -430,11 +406,11 @@ class ByteBuf {
       readFloat32List(lengthInBytes);
 
   double getFloat64(int offset) {
-    checkRange(offset, 8, 8, "Float64");
+    checkRange(offset, kFloat64NBytes, kFloat64NBytes, "getFloat64");
     return _bd.getFloat64(offset, endianness);
   }
 
-  /// Reads a 64 bit floating point number from the [ByteBuf].
+  /// Reads a 64 bit floating point number from the byte array.
   double readFloat64() {
     double value = getFloat64(_readIndex);
     _readIndex += 8;
@@ -447,8 +423,8 @@ class ByteBuf {
   /// Returns an [Float64List] of length [lengthInBytes]. [offset]
   /// is an absolute offset in [_bytes].
   List<double> getFloat64List(int offset, int lengthInBytes) {
-    checkRange(offset, 8, lengthInBytes, "getFloat64List");
-    return _bytes.buffer.asFloat64List(offset, offset + lengthInBytes);
+    checkRange(offset, kFloat64NBytes, lengthInBytes, "getFloat64List");
+    return _bytes.buffer.asFloat64List(offset, lengthInBytes ~/ kFloat64NBytes);
   }
 
   /// Returns an [Float64List] of length [lengthInBytes] from the current
@@ -486,7 +462,7 @@ class ByteBuf {
   */
   //Enhancement: Which is better [getFixedString] or [getFixedString1]?  Does it matter?
   String getString(int offset, int length) {
-    checkRange(offset, length, 1, "getString");
+    checkRange(offset, 1, length, "getString");
     Uint8List charCodes = _bytes.buffer.asUint8List(offset, length);
     var s = new String.fromCharCodes(charCodes);
     if ((s.codeUnitAt(length - 1) == kSpace) || (s.codeUnitAt(length - 1) == kNull))
@@ -494,7 +470,7 @@ class ByteBuf {
     return s;
   }
 
-  /// Reads a string of 8 bit characters from the [ByteBuf].
+  /// Reads a string of 8 bit characters from the byte array.
   String readString(int length) {
     String s = getString(_readIndex, length);
     _readIndex += length;
@@ -502,11 +478,12 @@ class ByteBuf {
   }
 
   List<String> getStringList(int offset, int length) {
+    checkRange(offset, kByteLength, length, "getStringList");
     var s = getString(offset, length);
     return s.split(r'\');
   }
 
-  /// Reads a [List] of [String]s from the [ByteBuf].
+  /// Reads a [List] of [String]s from the byte array.
   /// The backslash (reverse solidus) characters separates
   /// the [String]s.
   List<String> readStringList(int length) {
@@ -515,7 +492,3 @@ class ByteBuf {
     return list;
   }
 }
-
-
-
-
