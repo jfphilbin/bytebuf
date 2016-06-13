@@ -1,8 +1,8 @@
-name: byte_buf
+name: bytebuf
 description: Buffer utilites for reading and writing byte arrays (Uint8Lists).
 version: 0.3.0
 author: Jim Philbin <mailto:jfphilbin@gmail.com>
-homepage: https://github.com/OpenDICOMweb/byte_buf
+homepage: https://github.com/OpenDICOMweb/bytebuf
 
 environment:
   sdk: '>=1.0.0 <2.0.0'
