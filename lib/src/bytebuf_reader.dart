@@ -9,10 +9,11 @@ import 'dart:typed_data';
 
 import 'package:ascii/ascii.dart';
 
-import 'constants.dart';
 import 'utils.dart';
 
 //TODO: update [checkRange]
+//TODO: rename to Uint8Buffer (or Uint8Reader, Uint8Writer, Uint8Buffer)
+//TODO: add write functionality
 //TODO: rename to Uint8Buffer (or Uint8Reader, Uint8Writer, Uint8Buffer)
 //TODO: add write functionality
 
@@ -43,15 +44,15 @@ class ByteBufReader {
   /// Returns a [new] [ByteArray] [length] bytes long.
   factory ByteBufReader(Uint8List bytes, [int offset = 0, int length]) {
     int end = checkView(bytes.buffer, offset, length);
-    return new ByteBufReader._(bytes.buffer, offset, end);
+    return new ByteBufReader._(bytes, offset, end);
   }
 
   //TODO: doesn't handle Endiannes should it?
   /// Constructs a [new] [ByteArray] of [length]. The default length is 1024.
-  ByteBufReader._(ByteBuffer buffer, int offset, int length)
-      : _buffer = buffer,
-        _bytes = buffer.asUint8List(offset, length),
-        _bd = buffer.asByteData(offset, length),
+  ByteBufReader._(Uint8List bytes, int offset, int length)
+      : _buffer = bytes.buffer,
+        _bytes = bytes.buffer.asUint8List(offset, length),
+        _bd = bytes.buffer.asByteData(offset, length),
         _start = offset,
         _end = offset + length,
         _readIndex = 0;
@@ -68,13 +69,13 @@ class ByteBufReader {
   }
   */
 
-  factory ByteBufReader.view(ByteBufReader bytes, [int offset = 0, int length]) {
-    checkView(bytes._buffer, offset, length);
-    return new ByteBufReader._(bytes._buffer,  offset, length);
+  factory ByteBufReader.view(Uint8List bytes, [int offset = 0, int length]) {
+    checkView(bytes.buffer, offset, length);
+    return new ByteBufReader._(bytes,  offset, length);
   }
 
   ByteBufReader slice([int start = 0, int length]) =>
-    new ByteBufReader._(_buffer,  0, length);
+    new ByteBufReader._(_bytes,  0, length);
 
   /// Returns a new [ByteBufReader] that is a copy of [this] from [start]
   /// inclusive to [end] exclusive, unless [start == 0] and [end == null]
@@ -86,7 +87,7 @@ class ByteBufReader {
   int operator [](int i) => _bytes[i];
 
   //TODO: this needs to check [i] and [val]
-  operator []=(int i, int val) => _bytes[i] = val;
+  void operator []=(int i, int val) { _bytes[i] = val; }
 
   int get length => _end - _start;
 

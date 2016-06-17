@@ -6,7 +6,7 @@
 
 import 'dart:typed_data';
 
-import 'package:bytebuf/bytebuf.dart';
+import 'package:bytebuf/bytebuf_reader.dart';
 import "package:test/test.dart";
 
 import 'test_utilities.dart';
@@ -42,7 +42,7 @@ void main() {
     List<String> list = ["foo", "bar", "baz"];
     String strings = list.join("\\");
     ByteBufReader reader = readerFromString(strings);
-    List<String> l1 = reader.readStringList(strings.length);
+    List l1 = reader.readStringList(strings.length);
     expect(l1, equals(list));
   });
 
@@ -71,7 +71,7 @@ void main() {
     Uint8List bytes = uint8list.buffer.asUint8List();
     ByteBufReader reader = new ByteBufReader(bytes);
 
-    List<int> list = reader.readUint8List(uint8list.lengthInBytes);
+    Uint8List list = reader.readUint8List(uint8list.lengthInBytes);
     print('Uint8List = $list');
     expect(list, equals(uints));
   });
@@ -102,7 +102,7 @@ void main() {
     Uint8List bytes = int8list.buffer.asUint8List();
     ByteBufReader reader = new ByteBufReader(bytes);
 
-    List<int> list = reader.readInt8List(int8list.lengthInBytes);
+    Uint8List list = reader.readInt8List(int8list.lengthInBytes);
     print('Int8List = $list');
     expect(list, equals(ints));
   });
@@ -144,7 +144,7 @@ void main() {
     ByteBufReader reader = new ByteBufReader(bytes);
 
     print('Uint16List.lengthInBytes= ${uint16list.lengthInBytes}');
-    List<int> list = reader.readUint16List(uint16list.lengthInBytes);
+    Uint16List list = reader.readUint16List(uint16list.lengthInBytes);
     print('readList = $list');
     expect(list, equals(uint16s));
   });
@@ -186,7 +186,7 @@ void main() {
     ByteBufReader reader = new ByteBufReader(bytes);
 
     print('int16List.lengthInBytes= ${int16list.lengthInBytes}');
-    List<int> list = reader.readInt16List(int16list.lengthInBytes);
+    Uint16List list = reader.readInt16List(int16list.lengthInBytes);
     print('Int16List = $list');
     expect(list, equals(int16s));
   });
@@ -228,7 +228,7 @@ void main() {
     ByteBufReader reader = new ByteBufReader(bytes);
 
     print('int32List.lengthInBytes= ${uint32list.lengthInBytes}');
-    List<int> list = reader.readUint32List(uint32list.lengthInBytes);
+    Uint32List list = reader.readUint32List(uint32list.lengthInBytes);
     print('Uint32List = $list');
     expect(list, equals(uint32s));
   });
@@ -270,7 +270,7 @@ void main() {
     ByteBufReader reader = new ByteBufReader(bytes);
 
     print('int32List.lengthInBytes= ${int32list.lengthInBytes}');
-    List<int> list = reader.readInt32List(int32list.lengthInBytes);
+    Int32List list = reader.readInt32List(int32list.lengthInBytes);
     print('int32List = $list');
     expect(list, equals(int32s));
   });
@@ -312,7 +312,7 @@ void main() {
     ByteBufReader reader = new ByteBufReader(bytes);
 
     print('int64List.lengthInBytes= ${uint64list.lengthInBytes}');
-    List<int> list = reader.readUint64List(uint64list.lengthInBytes);
+    Uint64List list = reader.readUint64List(uint64list.lengthInBytes);
     print('UInt64List = $list');
     expect(list, equals(uint64s));
   });
@@ -354,7 +354,7 @@ void main() {
     ByteBufReader reader = new ByteBufReader(bytes);
 
     print('int64List.lengthInBytes= ${int64list.lengthInBytes}');
-    List<int> list = reader.readInt64List(int64list.lengthInBytes);
+    Int64List list = reader.readInt64List(int64list.lengthInBytes);
     print('int64List = $list');
     expect(list, equals(int64s));
   });
@@ -389,7 +389,7 @@ void main() {
     print('float8List: $float8List');
 
     ByteBufReader reader = new ByteBufReader(float8List);
-    List<double> list = reader.readFloat32List(float8List.lengthInBytes);
+    Float32List list = reader.readFloat32List(float8List.lengthInBytes);
     print('Float32List = $list');
     expect(list, equals(float32List));
   });
@@ -424,7 +424,7 @@ void main() {
     print('float8List: $float8List');
 
     ByteBufReader reader = new ByteBufReader(float8List);
-    List<double> list = reader.readFloat64List(float8List.lengthInBytes);
+    Float64List list = reader.readFloat64List(float8List.lengthInBytes);
     print('Float64List = $list');
     expect(list, equals(float64List));
   });

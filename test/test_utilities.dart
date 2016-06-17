@@ -8,13 +8,20 @@ library odw.sdk.utilities.bytebuf.test.utilities;
 import 'dart:convert';
 import 'dart:typed_data';
 
+import 'package:bytebuf/bytebuf.dart';
 import 'package:bytebuf/bytebuf_reader.dart';
 
 Uint8List toUtf8(String s) => UTF8.encode(s);
 
-String StringFromBytes(Uint8List bytes) => UTF8.decode(bytes);
+String stringFromBytes(Uint8List bytes) => UTF8.decode(bytes);
 
 ByteBufReader readerFromString(String s) {
   return new ByteBufReader(toUtf8(s));
 }
+
+ByteBuf  byteBufFromString(String s) {
+  return new ByteBuf.fromUint8List(toUtf8(s));
+}
+
+
 

@@ -7,9 +7,24 @@ library odw.sdk.utilities.bytebuf.utils;
 
 import 'dart:typed_data';
 
-//TODO: rename to Uint8Buffer (or Uint8Reader, Uint8Writer, Uint8Buffer)
-//TODO: add write functionality
+//TODO: figure out better names for these
 
+// Constants for [length] of ByteData types.
+const kByteLength = 1;
+const kUtf8NBytes = 1;
+const kUtf16NBytes = 2;
+const kInt8NBytes = Int8List.BYTES_PER_ELEMENT;
+const kUint8NBytes = Uint8List.BYTES_PER_ELEMENT;
+const kInt16NBytes = Int16List.BYTES_PER_ELEMENT;
+const kUint16NBytes = Uint16List.BYTES_PER_ELEMENT;
+const kInt32NBytes = Int32List.BYTES_PER_ELEMENT;
+const kUint32NBytes = Uint32List.BYTES_PER_ELEMENT;
+const kInt64NBytes = Int64List.BYTES_PER_ELEMENT;
+const kUint64NBytes = Uint64List.BYTES_PER_ELEMENT;
+const kFloat32NBytes = Float32List.BYTES_PER_ELEMENT;
+const kFloat64NBytes = Float64List.BYTES_PER_ELEMENT;
+
+///
 int checkView(ByteBuffer buffer, int offset, int length) {
   length = (length == null) ? buffer.lengthInBytes : length;
   int end = offset + length;

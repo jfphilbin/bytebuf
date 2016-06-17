@@ -15,6 +15,7 @@ void main() {
   print(a);
   print(b);
   print(c);
+  print(d);
 
   a[1] = 10;
   print('\na: $a');
