@@ -7,4 +7,4 @@ library odw.sdk.utilities.byte_buf.byte_buf_reader;
 
 /// Utilities for reading and writing [Uint8List] buffers
 
-export 'src/bytebuf_reader.dart';
+export 'src/bytebuf_reader_old.dart';

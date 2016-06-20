@@ -5,142 +5,328 @@
 // See the AUTHORS file for other contributors.
 library odw.sdk.utilities.bytebuf.bytebuf_base;
 
+//import 'dart:convert';
+import 'dart:math' as math;
 import 'dart:typed_data';
 
-import 'utils.dart';
+// TODO:
+//  * Finish documentation
+//  * Make buffers Unmodifiable
+//  * Make buffer pools, both heap and non-heap and use check accessable.
+//  * Make buffers growable
+//  * Make a LoggingByteBuf
+//  * create a big_endian_bytebuf.
+//  * Can the Argument Errors and RangeErrors be merged
+//  * reorganize:
+//    ** ByteBufBase contains global static, general constructors and private fields and getters
+//    ** ByteBufReader extends Base with Read constructors, methods and readOnly getter...
+//    ** ByteBuf extends Reader with read and write constructors, methods...
 
-class ByteBuf {
-  /// The Endianness can be set before using
-  Endianness endianness = Endianness.LITTLE_ENDIAN;
 
-  /// The underlying [ByteBuffer].
-  final ByteBuffer _buffer;
+/// A Byte Buffer implementation based on Netty's ByteBuf.
+///
+/// A [ByteBufBase] uses an underlying [Uint8List] to contain byte data,
+/// where a "byte" is an unsigned 8-bit integer.  The "capacity" of the
+/// [ByteBufBase] is always equal to the [length] of the underlying [Uint8List].
+//TODO: finish description
 
-  /// A [Uint8List] view of [buffer].
-  final Uint8List _bytes;
+const _MB = 1024 * 1024;
+const _GB = 1024 * 1024 * 1024;
 
-  /// A [ByteData] view of [buffer].
-  final ByteData _bd;
+/// A skeletal implementation of a buffer.
 
-  /// The index at which the [buffer] [slice] starts.
-  final int _start;
+abstract class ByteBufBase {
+  static const defaultLengthInBytes = 1024;
+  static const defaultMaxCapacity = 1 * _MB;
+  static const maxMaxCapacity = 2 * _GB;
+  static const endianness = Endianness.LITTLE_ENDIAN;
 
-  /// The index of the last byte + 1 of the [buffer] [slice];
-  final int _end;
-
-  /// The current read position in [this].
+  Uint8List _bytes;
+  ByteData _bd;
   int _readIndex;
-
-  /// The current write position in [this].
   int _writeIndex;
 
-/*
-  static Uint8List _getEmptyBuffer(int length) {
-    if ((length >= 0)) throw "Invalid Length: $length";
-    return new Uint8List(length);
-  }
-*/
-  factory ByteBuf([int length = 1024]) {
-    if (length < 0) throw new ArgumentError('Invalid Length: $length');
-    var bytes = new Uint8List(length);
-    return new ByteBuf._(bytes, 0, length);
-  }
+  //*** Constructors ***
 
-  /// Constructs a [new] [ByteArray] of [length]. The default length is 1024.
-  ByteBuf._(Uint8List bytes, int offset, length)
-      : _buffer = bytes.buffer,
-        _bytes = bytes,
-        _bd = bytes.buffer.asByteData(offset, length),
-        _start = offset,
-        _end = offset + length;
-
-
-  /// Returns a [new] [ByteBuf] with from [start] to [end].
-  ByteBuf slice([start = 0, int end]) {
-    checkView(_buffer, start, end);
-    return new ByteBuf._(_bytes, start, end);
+  /// Creates a new [ByteBufBase] of [maxCapacity], where
+  ///  [readIndex] = [writeIndex] = 0.
+  factory ByteBufBase([int lengthInBytes = defaultLengthInBytes]) {
+    if (lengthInBytes == null)
+      lengthInBytes = defaultLengthInBytes;
+    if ((lengthInBytes < 0) || (lengthInBytes > maxMaxCapacity))
+      throw new ArgumentError("lengthInBytes: $lengthInBytes "
+          "(expected: 0 <= lengthInBytes <= maxCapacity($maxMaxCapacity)");
+    return new ByteBufBase._(new Uint8List(lengthInBytes), 0, 0, lengthInBytes);
   }
 
-  ByteBuf sublist(int start, [int end]) {
-    checkSublist(_buffer, start, end);
-    return new ByteBuf._(_bytes, start, end - start);
+  /// Creates a new readable [ByteBufBase] from the [Uint8List] [bytes].
+  factory ByteBufBase.fromByteBuf(ByteBufBase buf, [int offset = 0, int length]) {
+    length = (length == null) ? buf._bytes.length : length;
+    if ((length < 0) || ((offset < 0) || ((buf._bytes.length - offset) < length)))
+      throw new ArgumentError('Invalid offset($offset) or '
+          'length($length) for ${buf._bytes}bytes(length = ${buf._bytes.lengthInBytes}');
+    return new ByteBufBase._(buf._bytes, offset, length, length);
   }
 
-  int operator [](int i)=> _bytes[i];
-
-  void operator []=(int i, int val) {
-    _bytes[i] = val;
+  /// Creates a new readable [ByteBufBase] from the [Uint8List] [bytes].
+  factory ByteBufBase.fromUint8List(Uint8List bytes, [int offset = 0, int length]) {
+    length = (length == null) ? bytes.length : length;
+    if ((length < 0) || ((offset < 0) || ((bytes.length - offset) < length)))
+      throw new ArgumentError('Invalid offset($offset) or '
+          'length($length) for $bytes(length = ${bytes.lengthInBytes}');
+    return new ByteBufBase._(bytes, offset, length, length);
   }
 
+  /// Creates a [Uint8List] with the same length as the elements in [list],
+  /// and copies over the elements.  Values are truncated to fit in the list
+  /// when they are copied, the same way storing values truncates them.
+  factory ByteBufBase.fromList(List<int> list) =>
+      new ByteBufBase._(new Uint8List.fromList(list), 0, list.length, list.length);
+
+  /// Internal Constructor: Returns a [ByteBufBase] slice from [bytes].
+  ByteBufBase._(Uint8List bytes, int readIndex, int writeIndex, int length)
+      : _bytes = bytes.buffer.asUint8List(readIndex, length),
+        _bd = bytes.buffer.asByteData(readIndex, length),
+        _readIndex = readIndex,
+        _writeIndex = writeIndex;
+
+  /// Creates a new [ByteBufBase] that is a view of [this].  The underlying
+  /// [Uint8List] is shared, and modifications to it will be visible in the original.
+  ByteBufBase readSlice(int offset, int length) =>
+      new ByteBufBase._(_bytes, offset, length, length);
+
+  /// Creates a new [ByteBufBase] that is a view of [this].  The underlying
+  /// [Uint8List] is shared, and modifications to it will be visible in the original.
+  ByteBufBase writeSlice(int offset, int length) =>
+      new ByteBufBase._(_bytes, offset, offset, length);
+
+  /// Creates a new [ByteBufBase] that is a [sublist] of [this].  The underlying
+  /// [Uint8List] is shared, and modifications to it will be visible in the original.
+  ByteBufBase sublist(int start, int end) =>
+      new ByteBufBase._(_bytes, start, end - start, end - start);
+
+
+  //*** Operators ***
+
+
+  /// Sets the byte (Uint8) at [index] to [value].
+  void operator []=(int index, int value) {
+    setUint8(index, value);
+  }
+
+  @override
+  bool operator ==(Object object) =>
+      (this == object) ||
+          ((object is ByteBufBase) && (this.hashCode == object.hashCode));
+
+  //*** Internal Utilities ***
+
+  /// Returns the length of the underlying [Uint8List].
+  int get lengthInBytes => _bytes.lengthInBytes;
+
+  /// Checks that the [readIndex] is valid;
+  void _checkReadIndex(int index, [int lengthInBytes = 1]) {
+    //print("checkReadIndex: index($index), lengthInBytes($lengthInBytes)");
+    //print("checkReadIndex: readIndex($_readIndex), writeIndex($_writeIndex)");
+    if ((index < _readIndex) || ((index + lengthInBytes) > writeIndex))
+      indexOutOfBounds(index, "read");
+  }
+
+  /// Checks that the [writeIndex] is valid;
+  void _checkWriteIndex(int index, [int lengthInBytes = 1]) {
+    if (((index < _writeIndex) || (index + lengthInBytes) >= _bytes.lengthInBytes))
+      indexOutOfBounds(index, "write");
+  }
+
+  /// Checks that there are at least [minimumReadableBytes] available.
+  void _checkReadableBytes(int minimumReadableBytes) {
+    if (_readIndex > (_writeIndex - minimumReadableBytes))
+      throw new RangeError(
+          "readIndex($readIndex) + length($minimumReadableBytes) "
+              "exceeds writeIndex($writeIndex): #this");
+  }
+
+  /// Checks that there are at least [minimumWritableableBytes] available.
+  void _checkWritableBytes(int minimumWritableBytes) {
+    if ((_writeIndex + minimumWritableBytes) > lengthInBytes)
+      throw new RangeError(
+          "writeIndex($writeIndex) + minimumWritableBytes($minimumWritableBytes) "
+              "exceeds lengthInBytes($lengthInBytes): $this");
+  }
+
+  /// Sets the [readIndex] to [index].  If [index] is not valid a [RangeError] is thrown.
+  ByteBufBase setReadIndex(int index) {
+    if (index < 0 || index > _writeIndex)
+      throw new RangeError("readIndex: $index "
+          "(expected: 0 <= readIndex <= writeIndex($_writeIndex))");
+    _readIndex = index;
+    return this;
+  }
+
+  /// Sets the [writeIndex] to [index].  If [index] is not valid a [RangeError] is thrown.
+  ByteBufBase setWriteIndex(int index) {
+    if (index < _readIndex || index > capacity)
+      throw new RangeError(
+          "writeIndex: $index (expected: readIndex($_readIndex) <= writeIndex <= capacity($capacity))");
+    _writeIndex = index;
+    return this;
+  }
+
+  /// Sets the [readIndex] and [writeIndex].  If either is not valid a [RangeError] is thrown.
+  ByteBufBase setIndices(int readIndex, int writeIndex) {
+    if (readIndex < 0 || readIndex > writeIndex || writeIndex > capacity)
+      throw new RangeError("readIndex: $readIndex, writeIndex: $writeIndex "
+          "(expected: 0 <= readIndex <= writeIndex <= capacity($capacity))");
+    _readIndex = readIndex;
+    _writeIndex = writeIndex;
+    return this;
+  }
+
+
+  //*** Getters and Setters ***
+
+  @override
+  int get hashCode => _bytes.hashCode;
+
+  /// Returns the current value of the index where the next read will start.
   int get readIndex => _readIndex;
 
-  set readIndex(int readIndex) {
-    if (readIndex < 0 || readIndex > writeIndex) {
-      throw new RangeError(
-          "readerIndex: $_readIndex (expected: 0 <= readerIndex <= writerIndex($_writeIndex))");
-    }
-    _readIndex = readIndex;
-    //return this;
+  /// Sets the [readIndex] to [index].
+  set readIndex(int index) {
+    setReadIndex(index);
   }
 
+  /// Returns the current value of the index where the next write will start.
   int get writeIndex => _writeIndex;
 
-  set writeIndex(int writeIndex) {
-    if (_writeIndex < _readIndex || _writeIndex > lengthInBytes) {
-      throw new RangeError(
-          "writerIndex: $_writeIndex (expected: readerIndex($_readIndex) "
-              "<= writerIndex <= capacity($lengthInBytes)");
+  /// Sets the [writeIndex] to [index].
+  set writeIndex(int index) {
+    setWriteIndex(index);
+  }
+
+  /// Returns [true] if [this] is a read only.
+  bool get isReadOnly => false;
+
+  //TODO: create subclass
+  /// Returns an unmodifiable version of [this].
+  /// Note: an UnmodifiableByteBuf can still be read.
+  //BytebBufBase get asReadOnly => new UnmodifiableByteBuf(this);
+
+  //*** ByteBuf [_bytes] management
+
+  /// Returns the number of bytes (octets) this buffer can contain.
+  int get capacity => _bytes.lengthInBytes;
+
+  /// Returns [true] if there are readable bytes available, false otherwise.
+  bool get isReadable => _writeIndex > _readIndex;
+
+  /// Returns [true] if there are [numBytes] available to read, false otherwise.
+  bool hasReadable(int numBytes) => _writeIndex - _readIndex >= numBytes;
+
+  /// Returns [true] if there are writable bytes available, false otherwise.
+  bool get isWritable => lengthInBytes > _writeIndex;
+
+  /// Returns [true] if there are [numBytes] available to write, false otherwise.
+  bool hasWritable(int numBytes) => lengthInBytes - _writeIndex >= numBytes;
+
+  /// Returns the number of readable bytes.
+  int get readableBytes => _writeIndex - _readIndex;
+
+  /// Returns the number of writable bytes.
+  int get writableBytes => lengthInBytes - _writeIndex;
+
+  //*** Buffer Management Methods ***
+
+  void checkReadableBytes(int minimumReadableBytes) {
+    if (minimumReadableBytes < 0)
+      throw new ArgumentError("minimumReadableBytes: $minimumReadableBytes (expected: >= 0)");
+    _checkReadableBytes(minimumReadableBytes);
+  }
+
+  void checkWritableBytes(int minimumWritableBytes) {
+    if (minimumWritableBytes < 0)
+      throw new ArgumentError("minimumWritableBytes: $minimumWritableBytes (expected: >= 0)");
+    _checkWritableBytes(minimumWritableBytes);
+  }
+
+  /// Ensures that there are at least [minReadableBytes] available to read.
+  void ensureReadable(int minReadableBytes) {
+    if (minReadableBytes < 0)
+      throw new ArgumentError("minWritableBytes: $minReadableBytes (expected: >= 0)");
+    if (minReadableBytes > readableBytes)
+      throw new RangeError("writeIndex($_writeIndex) + "
+          "minWritableBytes($minReadableBytes) exceeds lengthInBytes($lengthInBytes): $this");
+    return;
+  }
+
+  /// Ensures that there are at least [minWritableBytes] available to write.
+  void ensureWritable(int minWritableBytes) {
+    if (minWritableBytes < 0)
+      throw new ArgumentError("minWritableBytes: $minWritableBytes (expected: >= 0)");
+    if (minWritableBytes > writableBytes)
+      throw new RangeError("writeIndex($_writeIndex) + "
+          "minWritableBytes($minWritableBytes) exceeds lengthInBytes($lengthInBytes): $this");
+    return;
+  }
+
+  /// Compares the content of [this] to the content
+  /// of [other].  Comparison is performed in a similar
+  /// manner to the [String.compareTo] method.
+  int compareTo(ByteBufBase other) {
+    if (this == other) return 0;
+    final int len = readableBytes;
+    final int oLen = other.readableBytes;
+    final int minLength = math.min(len, oLen);
+
+    int aIndex = readIndex;
+    int bIndex = other.readIndex;
+    for (int i = 0; i < minLength; i++) {
+      if (this[aIndex] > other[bIndex])
+        return 1;
+      if (this[aIndex] < other[bIndex])
+        return -1;
     }
-    _writeIndex = writeIndex;
-    //return this;
-  }
-  int get lengthInBytes => _end - _start;
-
-  int get readCapacity => _writeIndex - _readIndex;
-
-  int get writeCapacity => _end - _writeIndex;
-
-  bool get isEmpty => _readIndex >= _end;
-
-  bool get isNotEmpty => !isEmpty;
-
-  int seek(int n) {
-    checkRange(_readIndex, n, 1, "seek");
-    return _readIndex += n;
+    // The buffers are == upto minLength, so...
+    return len - oLen;
   }
 
-  int getLimit(int lengthInBytes) {
-    int localLimit = _readIndex + lengthInBytes;
-    if (localLimit > _end) throw "length $lengthInBytes too long";
-    return localLimit;
+  String toHex(int start, int end) {
+    var s = "";
+    for (int i = start; i < end; i++)
+      s += _bytes[i].toRadixString(16).padLeft(2, " 0") + " ";
+    return s;
   }
 
-  int checkReadIndex(int readIndex) {
-    if ((readIndex < _start) || (readIndex > _writeIndex))
-      throw new RangeError( "readIndex $readIndex out of range (_start=$_start, _end=$_end");
-    return _readIndex - readIndex;
+  String get info => """
+  ByteBuf $hashCode
+    rdIdx: $_readIndex,
+    bytes: '${toHex(_readIndex, _writeIndex)}'
+    string:'${_bytes.sublist(_readIndex, _writeIndex).toString()}'
+    wrIdx: $_writeIndex,
+    remaining: ${capacity - _writeIndex }
+    cap: $capacity,
+    maxCap: $lengthInBytes
+  """;
+
+  void debug() => print(info);
+
+  @override
+  String toString() => 'ByteBuf (rdIdx: $_readIndex, wrIdx: '
+      '$_writeIndex, cap: $capacity, maxCap: $lengthInBytes)';
+
+  //*** Error Methods ***
+
+  ///
+  void indexOutOfBounds(int index, String type) {
+    // print("indexOutOfBounds: index($index), type($type)");
+    // print("indexOutOfBounds: readIndex($_readIndex), writeIndex($_writeIndex)");
+    String s;
+    if (type == "read")
+      s = "Invalid Read Index($index): $index "
+          "(readIndex($readIndex) <= index($index) < writeIndex($writeIndex)";
+    if (type == "write")
+      s = "Invalid Write Index($index): $index to ByteBuf($this) with lengthInB "
+          "(writeIndex($writeIndex) <= index($index) < capacity(${_bytes.lengthInBytes})";
+    throw new RangeError(s);
   }
-
-  int checkWriteIndex(int writeIndex) {
-    if ((writeIndex < _readIndex) || (writeIndex > _end))
-      throw new RangeError( "writeIndex $writeIndex out of range (_start=$_start, _end=$_end");
-    return _readIndex - writeIndex;
-  }
-
-  //Flush:? not used
-  //TODO add to Warnings
-  int checkLimit(int limit) => (limit >= _end) ? _end : limit;
-
-  void checkRange(int offset, int unitLength, int lengthInBytes, String caller) {
-    if ((lengthInBytes ~/ unitLength) != 0)
-      throw '$caller: Invalid Length=$lengthInBytes for UnitLength=$unitLength';
-    int index = offset + (unitLength * lengthInBytes);
-    if (index < _start) {
-      throw '$caller: _readIndex cannot be less than 0';
-    }
-    if (index > _end) {
-      throw '$caller: attempt to read past end of buffer';
-    }
-  }
-
 }

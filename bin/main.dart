@@ -5,6 +5,7 @@
 // See the AUTHORS file for other contributors.
 
 import 'dart:typed_data';
+
 void main() {
 
   List<int> a = [0, 1, 2, 3];

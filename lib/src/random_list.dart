@@ -3,23 +3,10 @@
 // that can be found in the LICENSE file.
 // Author: Jim Philbin <jfphilbin@gmail.edu>
 // See the AUTHORS file for other contributors.
-library odw.sdk.utilities.bytebuf.number_type;
+library bytebuf.random_list;
 
 import 'dart:math';
 import 'dart:typed_data';
-
-Map<String, dynamic> constructors = {
-  "Int8": Int8List,
-  "Uint8": Uint8List,
-  "Int16": Int16List,
-  "Uint16": Uint16List,
-  "Int32": Int32List,
-  "Uint32": Uint32List,
-  "Int64": Int64List,
-  "Uint64": Uint64List,
-  "Float32": Float32List,
-  "Float64": Float64List
-};
 
 //TODO: there should be a better way to do this.
 class RandomList {

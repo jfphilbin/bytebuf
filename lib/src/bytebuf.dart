@@ -17,6 +17,10 @@ import 'dart:typed_data';
 //  * Make a LoggingByteBuf
 //  * create a big_endian_bytebuf.
 //  * Can the Argument Errors and RangeErrors be merged
+//  * reorganize:
+//    ** ByteBufBase contains global static, general constructors and private fields and getters
+//    ** ByteBufReader extends Base with Read constructors, methods and readOnly getter...
+//    ** ByteBuf extends Reader with read and write constructors, methods...
 
 
 /// A Byte Buffer implementation based on Netty's ByteBuf.
@@ -41,6 +45,7 @@ class ByteBuf {
   ByteData _bd;
   int _readIndex;
   int _writeIndex;
+  int _readIndexMark;
 
   //*** Constructors ***
 
@@ -77,6 +82,14 @@ class ByteBuf {
   /// when they are copied, the same way storing values truncates them.
   factory ByteBuf.fromList(List<int> list) =>
       new ByteBuf._(new Uint8List.fromList(list), 0, list.length, list.length);
+
+  factory ByteBuf.view(ByteBuf buf, [int offset = 0, int length]) {
+    length = (length == null) ? buf._bytes.length : length;
+    if ((length < 0) || ((offset < 0) || ((buf._bytes.length - offset) < length)))
+      throw new ArgumentError('Invalid offset($offset) or '
+          'length($length) for ${buf._bytes}bytes(length = ${buf._bytes.lengthInBytes}');
+    return new ByteBuf._(buf._bytes.buffer.asUint8List(offset, length), offset, length, length);
+  }
 
   /// Internal Constructor: Returns a [ByteBuf] slice from [bytes].
   ByteBuf._(Uint8List bytes, int readIndex, int writeIndex, int length)
@@ -181,6 +194,8 @@ class ByteBuf {
 
   //*** Getters and Setters ***
 
+  Uint8List get bytes => _bytes;
+  ByteData get byteData => _bd;
   @override
   int get hashCode => _bytes.hashCode;
 
@@ -226,6 +241,10 @@ class ByteBuf {
 
   /// Returns the number of writable bytes.
   int get writableBytes => lengthInBytes - _writeIndex;
+
+  int get readIndexMark => _readIndexMark;
+  int get setReadIndexMark => _readIndexMark = _readIndex;
+  int get resetReadIndexMark => _readIndex = _readIndexMark;
 
   //*** Buffer Management Methods ***
 
@@ -283,6 +302,25 @@ class ByteBuf {
   }
 
   //*** Read Methods ***
+
+  /// Returns the number of zeros read.
+  int getZeros(int offset, int length) {
+    int count = 0;
+    for(int i = 0; i < length; i++) {
+      var val = getUint8(offset);
+      if (val != 0)
+        return count - 1;
+    }
+    return 0;
+  }
+
+  /// Return [true] if [length] Uint8 values
+  /// equal to zero (0) were read, false otherwise.
+  int readZeros(int length) {
+    var v = getZeros(_readIndex, length);
+    _readIndex += length;
+    return v;
+  }
 
   ///Returns a [bool] value.  [bools]s are encoded as a single byte
   ///where 0 is false and any other value is true.
@@ -1320,6 +1358,7 @@ class ByteBuf {
       length += list[i].length;
       length++;
     }
+    return length;
   }
 
   /// Converts the [List] of [String] into a single [String] separated
@@ -1389,7 +1428,7 @@ class ByteBuf {
         s += _bytes[i].toRadixString(16).padLeft(2, " 0") + " ";
     return s;
   }
-  String debug() {print( """
+  String get info => """
   ByteBuf $hashCode
     rdIdx: $_readIndex,
     bytes: '${toHex(_readIndex, _writeIndex)}'
@@ -1398,7 +1437,10 @@ class ByteBuf {
     remaining: ${capacity - _writeIndex }
     cap: $capacity,
     maxCap: $lengthInBytes
-  """);}
+  """;
+
+  void debug() => print(info);
+
 
   @override
   String toString() => 'ByteBuf (rdIdx: $_readIndex, wrIdx: '
