@@ -4,7 +4,7 @@
 // Author: Jim Philbin <jfphilbin@gmail.edu>
 // See the AUTHORS file for other contributors.
 
-import 'package:bytebuf/src/number_type.dart';
+import 'package:bytebuf/bytebuf.dart';
 
 void main() {
 

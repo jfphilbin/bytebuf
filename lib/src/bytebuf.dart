@@ -133,7 +133,7 @@ class ByteBuf {
   int get lengthInBytes => _bytes.lengthInBytes;
 
   /// Checks that the [readIndex] is valid;
-  void _checkReadIndex(int index, [int lengthInBytes = 1]) {
+  void checkReadIndex(int index, [int lengthInBytes = 1]) {
     //print("checkReadIndex: index($index), lengthInBytes($lengthInBytes)");
     //print("checkReadIndex: readIndex($_readIndex), writeIndex($_writeIndex)");
     if ((index < _readIndex) || ((index + lengthInBytes) > writeIndex))
@@ -141,7 +141,7 @@ class ByteBuf {
   }
 
   /// Checks that the [writeIndex] is valid;
-  void _checkWriteIndex(int index, [int lengthInBytes = 1]) {
+  void checkWriteIndex(int index, [int lengthInBytes = 1]) {
     if (((index < _writeIndex) || (index + lengthInBytes) >= _bytes.lengthInBytes))
       indexOutOfBounds(index, "write");
   }
@@ -333,7 +333,7 @@ class ByteBuf {
 
   /// Returns an [List] of [bool].
   List<bool> getBooleanList(int index, int length) {
-    _checkReadIndex(index, length);
+    checkReadIndex(index, length);
     List<bool> list = new List(length);
     for (int i = 0; i < length; i++)
       list[i] = getBoolean(i);
@@ -343,7 +343,7 @@ class ByteBuf {
   /// Reads and Returns a [List] of [bool], and advances
   /// the [readIndex] by the number of byte read.
   List<bool> readBooleanList(int length) {
-    _checkReadIndex(_readIndex, length);
+    checkReadIndex(_readIndex, length);
     var list = getBooleanList(_readIndex, length);
     _readIndex += length;
     return list;
@@ -353,7 +353,7 @@ class ByteBuf {
 
   /// Returns an signed 8-bit integer.
   int getInt8(int index) {
-    _checkReadIndex(index);
+    checkReadIndex(index);
     return _bd.getInt8(index);
   }
 
@@ -367,7 +367,7 @@ class ByteBuf {
 
   /// Returns an [Int8List] of signed 8-bit integers.
   Int8List getInt8List(int index, int length) {
-    _checkReadIndex(index, length);
+    checkReadIndex(index, length);
     return _bytes.buffer.asInt8List(index, length).sublist(0);
   }
 
@@ -381,7 +381,7 @@ class ByteBuf {
 
   /// Returns an [Int8List] view of signed 8-bit integers.
   Int8List getInt8ListView(int index, int length) {
-    _checkReadIndex(index, length);
+    checkReadIndex(index, length);
     return _bytes.buffer.asInt8List(index, length);
   }
 
@@ -396,7 +396,7 @@ class ByteBuf {
 
   /// Returns an unsigned 8-bit integer.
   int getUint8(int index) {
-    _checkReadIndex(index);
+    checkReadIndex(index);
     return _bd.getUint8(index);
   }
 
@@ -409,7 +409,7 @@ class ByteBuf {
 
   /// Returns an [Uint8List] of unsigned 8-bit integers.
   Uint8List getUint8List(int index, int length) {
-    _checkReadIndex(index, length);
+    checkReadIndex(index, length);
     return _bytes.sublist(index, index + length);
   }
 
@@ -423,7 +423,7 @@ class ByteBuf {
 
   /// Returns an [Uint8List] view of unsigned 8-bit integers.
   Uint8List getUint8ListSlice(int index, int length) {
-    _checkReadIndex(index, length);
+    checkReadIndex(index, length);
       return _bytes.buffer.asUint8List(index, length);
   }
 
@@ -438,7 +438,7 @@ class ByteBuf {
 
   /// Returns an unsigned 8-bit integer.
   int getInt16(int index) {
-    _checkReadIndex(index);
+    checkReadIndex(index);
     return _bd.getInt16(index, endianness);
   }
 
@@ -452,7 +452,7 @@ class ByteBuf {
   /// Returns an [Int16List] of unsigned 8-bit integers.
   /// [length] is the number of elements in the returned list.
   Int16List getInt16List(int index, int length) {
-    _checkReadIndex(index, length * 2);
+    checkReadIndex(index, length * 2);
     if((index ~/ 2) == 0) {
       return _bytes.buffer.asInt16List(index, length).sublist(0);
     } else {
@@ -473,7 +473,7 @@ class ByteBuf {
 
   /// Returns an [Int16List] view of unsigned 8-bit integers.
   Int16List getInt16ListSlice(int index, int length) {
-    _checkReadIndex(index, length * 2);
+    checkReadIndex(index, length * 2);
     if((index ~/ 2) == 0) {
       return _bytes.buffer.asInt16List(index, length);
     } else {
@@ -497,7 +497,7 @@ class ByteBuf {
 
   /// Returns an unsigned 16-bit integer.
   int getUint16(int index) {
-    _checkReadIndex(index, 2);
+    checkReadIndex(index, 2);
     return _bd.getUint16(index, endianness);
   }
 
@@ -513,7 +513,7 @@ class ByteBuf {
   /// Returns an [Uint16List] of unsigned 16-bit integers.
   /// [length] is the number of elements in the returned list.
   Uint16List getUint16List(int index, int length) {
-    _checkReadIndex(index, length * 2);
+    checkReadIndex(index, length * 2);
     if((index ~/ 2) == 0) {
       return _bytes.buffer.asUint16List(index, index + length).sublist(0);
     } else {
@@ -535,7 +535,7 @@ class ByteBuf {
 
   /// Returns an [Uint16List] view of unsigned 16-bit integers.
   Uint16List getUint16ListSlice(int index, int length) {
-    _checkReadIndex(index, length * 2);
+    checkReadIndex(index, length * 2);
     if((index ~/ 2) == 0) {
       return _bytes.buffer.asUint16List(index, length);
     } else {
@@ -559,7 +559,7 @@ class ByteBuf {
 
   /// Returns an signed 32-bit integer.
   int getInt32(int index) {
-    _checkReadIndex(index);
+    checkReadIndex(index);
     return _bd.getInt32(index, endianness);
   }
 
@@ -573,7 +573,7 @@ class ByteBuf {
   /// Returns an [Int32List] of signed 32-bit integers.
   /// [length] is the number of elements in the returned list.
   Int32List getInt32List(int index, int length) {
-    _checkReadIndex(index, length * 4);
+    checkReadIndex(index, length * 4);
     if ((index ~/ 4) == 0) {
       return _bytes.buffer.asInt32List(index, length).sublist(0);
     } else {
@@ -601,9 +601,9 @@ class ByteBuf {
 
   /// Returns an [Int32List] view of signed 32-bit integers.
   Int32List getInt32ListSlice(int index, int length) {
-    _checkReadIndex(index, length * 4);
+    checkReadIndex(index, length * 4);
     if((index ~/ 4) == 0) {
-      _checkReadIndex(index, length * 4);
+      checkReadIndex(index, length * 4);
       return _bytes.buffer.asInt32List(index, length);
     } else {
       // getInt32List(index, length)
@@ -627,7 +627,7 @@ class ByteBuf {
 
   /// Returns an unsigned 32-bit integer.
   int getUint32(int index) {
-    _checkReadIndex(index);
+    checkReadIndex(index);
     return _bd.getUint32(index, endianness);
   }
 
@@ -641,9 +641,9 @@ class ByteBuf {
   /// Returns an [Uint32List] of unsigned 32-bit integers.
   /// [length] is the number of elements in the returned list.
   Uint32List getUint32List(int index, int length) {
-    _checkReadIndex(index, length * 4);
+    checkReadIndex(index, length * 4);
     if((index ~/ 4) == 0) {
-      _checkReadIndex(index, length * 4);
+      checkReadIndex(index, length * 4);
       return _bytes.buffer.asUint32List(index, length).sublist(0);
     } else {
       var list = new Uint32List(length);
@@ -663,10 +663,10 @@ class ByteBuf {
 
   /// Returns an [Uint32List] view of unsigned 32-bit integers.
   Uint32List getUint32ListSlice(int index, int length) {
-    _checkReadIndex(index, length * 4);
+    checkReadIndex(index, length * 4);
     //return _bytes.buffer.asUint32List(index, length).sublist(0);
     if (index ~/ 4 == 0) {
-      _checkReadIndex(index, length * 4);
+      checkReadIndex(index, length * 4);
       return _bytes.buffer.asUint32List(index, length);
     } else {
       var list = new Uint32List(length);
@@ -688,7 +688,7 @@ class ByteBuf {
 
   /// Returns an signed 64-bit integer.
   int getInt64(int index) {
-    _checkReadIndex(index);
+    checkReadIndex(index);
     return _bd.getInt64(index, endianness);
   }
 
@@ -702,9 +702,9 @@ class ByteBuf {
   /// Returns an [Int64List] of signed 64-bit integers.
   /// [length] is the number of elements in the returned list.
   Int64List getInt64List(int index, int length) {
-    _checkReadIndex(index, length * 8);
+    checkReadIndex(index, length * 8);
     if((index ~/ 8) == 0) {
-      _checkReadIndex(index, length * 8);
+      checkReadIndex(index, length * 8);
       return _bytes.buffer.asInt64List(index, length).sublist(0);
     } else {
       var list = new Int64List(length);
@@ -724,9 +724,9 @@ class ByteBuf {
 
   /// Returns an [Int64List] view of signed 64-bit integers.
   Int64List getInt64ListSlice(int index, int length) {
-    _checkReadIndex(index, length * 8);
+    checkReadIndex(index, length * 8);
     if((index ~/ 8) == 0) {
-      _checkReadIndex(index, length * 8);
+      checkReadIndex(index, length * 8);
       return _bytes.buffer.asInt64List(index, length);
     } else {
       var list = new Int64List(length);
@@ -748,7 +748,7 @@ class ByteBuf {
 
   /// Returns an unsigned 64-bit integer.
   int getUint64(int index) {
-    _checkReadIndex(index);
+    checkReadIndex(index);
     return _bd.getUint64(index, endianness);
   }
 
@@ -763,7 +763,7 @@ class ByteBuf {
   /// [length] is the number of elements in the returned list.
   Uint64List getUint64List(int index, int length) {
     if((index ~/ 8) == 0) {
-      _checkReadIndex(index, length * 8);
+      checkReadIndex(index, length * 8);
       return _bytes.buffer.asUint64List(index, length).sublist(0);
     } else {
       var list = new Uint64List(length);
@@ -783,7 +783,7 @@ class ByteBuf {
 
   /// Returns an [Uint64List] view of unsigned 64-bit integers.
   Uint64List getUint64ListView(int index, int length) {
-    _checkReadIndex(index, length * 8);
+    checkReadIndex(index, length * 8);
     return new Uint64List.view(_bytes.buffer, index, length);
   }
 
@@ -799,7 +799,7 @@ class ByteBuf {
 
   /// Returns an signed 32-bit floating point number.
   double getFloat32(int index) {
-    _checkReadIndex(index);
+    checkReadIndex(index);
     return _bd.getFloat32(index, endianness);
   }
 
@@ -813,7 +813,7 @@ class ByteBuf {
   /// Returns an [Float32List] of signed 32-bit floating point numbers.
   /// [length] is the number of elements in the returned list.
   Float32List getFloat32List(int index, int length) {
-    _checkReadIndex(index, length * 4);
+    checkReadIndex(index, length * 4);
     if ((index ~/ 4) == 0) {
       return _bytes.buffer.asFloat32List(index, length).sublist(0);
     } else {
@@ -834,7 +834,7 @@ class ByteBuf {
 
   /// Returns an [Float32List] view of signed 32-bit floating point numbers.
   Float32List getFloat32ListSlice(int index, int length) {
-    _checkReadIndex(index, length * 4);
+    checkReadIndex(index, length * 4);
     return _bytes.buffer.asFloat32List(index, index + length);
   }
 
@@ -850,7 +850,7 @@ class ByteBuf {
 
   /// Returns an signed 64-bit floating point number.
   double getFloat64(int index) {
-    _checkReadIndex(index);
+    checkReadIndex(index);
     return _bd.getFloat64(index, endianness);
   }
 
@@ -864,7 +864,7 @@ class ByteBuf {
   /// Returns an [Float64List] of signed 64-bit floating point numbers.
   /// [length] is the number of elements in the returned list.
   Float64List getFloat64List(int index, int length) {
-    _checkReadIndex(index, length * 8);
+    checkReadIndex(index, length * 8);
     if ((index ~/ 4) == 0) {
       return _bytes.buffer.asFloat64List(index, length).sublist(0);
     } else {
@@ -885,7 +885,7 @@ class ByteBuf {
 
   /// Returns an [Float64List] view of signed 64-bit floating point numbers.
   Float64List getFloat64Slice(int index, int length) {
-    _checkReadIndex(index, length * 8);
+    checkReadIndex(index, length * 8);
     return _bytes.buffer.asFloat64List(index, length);
   }
 
@@ -904,7 +904,7 @@ class ByteBuf {
   /// Returns a [String] by decoding the bytes from [offset]
   /// to [length] as a UTF-8 string.
   String getString(int index, int length) {
-    _checkReadIndex(index, length);
+    checkReadIndex(index, length);
     return UTF8.decode(getUint8List(index, length));
   }
 
@@ -920,7 +920,7 @@ class ByteBuf {
   /// to [length] as a UTF-8 string, and then uses [delimeter] to
   /// separated the [String] into a [List].
   List<String> getStringList(int index, int length, [String delimiter = r"\"]) {
-    _checkReadIndex(index, length);
+    checkReadIndex(index, length);
     var s = UTF8.decode(getUint8List(index, length));
     return s.split(delimiter);
   }
@@ -964,7 +964,7 @@ class ByteBuf {
   /// Stores a [List] of [bool] values from [index] as byte (Uint8),
   /// where 0 = [false], and any other value = [true].
   ByteBuf setBooleanList(int index, List<int> list) {
-    _checkWriteIndex(index, list.length);
+    checkWriteIndex(index, list.length);
     for (int i = 0; i < list.length; i++)
       setInt8(index, list[i]);
     return this;
@@ -983,7 +983,7 @@ class ByteBuf {
 
   /// Stores a Int8 value at [index].
   ByteBuf setInt8(int index, int value) {
-    _checkWriteIndex(index);
+    checkWriteIndex(index);
     _bd.setInt8(index, value);
     return this;
   }
@@ -998,7 +998,7 @@ class ByteBuf {
 
   /// Stores a [List] of Uint8 [int] values at [index].
   ByteBuf setInt8List(int index, List<int> list) {
-    _checkWriteIndex(index, list.length);
+    checkWriteIndex(index, list.length);
     for (int i = 0; i < list.length; i++) {
       setInt8(index, list[i]);
       index += 1;
@@ -1018,7 +1018,7 @@ class ByteBuf {
 
   /// Stores a Uint8 value at [index].
   ByteBuf setUint8(int index, int value) {
-    _checkWriteIndex(index);
+    checkWriteIndex(index);
     _bd.setUint8(index, value);
     return this;
   }
@@ -1032,7 +1032,7 @@ class ByteBuf {
 
   /// Stores a [List] of Uint8 values at [index].
   ByteBuf setUint8List(int index, List<int> list) {
-    _checkWriteIndex(index, list.length);
+    checkWriteIndex(index, list.length);
     for (int i = 0; i < list.length; i++)
       setUint8(index + i, list[i]);
     return this;
@@ -1050,7 +1050,7 @@ class ByteBuf {
 
   /// Stores an Int16 value at [index].
   ByteBuf setInt16(int index, int value) {
-    _checkWriteIndex(index, 2);
+    checkWriteIndex(index, 2);
     _bd.setInt16(index, value,endianness);
     return this;
   }
@@ -1064,7 +1064,7 @@ class ByteBuf {
 
   /// Stores a [List] of Int16 values at [index].
   ByteBuf setInt16List(int index, List<int> list) {
-    _checkWriteIndex(index, list.length);
+    checkWriteIndex(index, list.length);
     for (int i = 0; i < list.length; i++) {
       setInt16(index, list[i]);
       index += 2;
@@ -1084,7 +1084,7 @@ class ByteBuf {
 
   /// Stores a Uint16 value at [index],
   ByteBuf setUint16(int index, int value) {
-    _checkWriteIndex(index, 2);
+    checkWriteIndex(index, 2);
     _bd.setInt16(index, value, endianness);
     return this;
   }
@@ -1099,7 +1099,7 @@ class ByteBuf {
 
   /// Stores a [List] of Uint16 values at [index].
   ByteBuf setUint16List(int index, List<int> list) {
-    _checkWriteIndex(index, list.length);
+    checkWriteIndex(index, list.length);
     for (int i = 0; i < list.length; i++) {
       setUint16(index, list[i]);
       index += 2;
@@ -1119,7 +1119,7 @@ class ByteBuf {
 
   /// Stores an Int32 value at [index].
   ByteBuf setInt32(int index, int value) {
-    _checkWriteIndex(index, 4);
+    checkWriteIndex(index, 4);
     _bd.setInt32(index, value, endianness);
     return this;
   }
@@ -1134,7 +1134,7 @@ class ByteBuf {
 
   /// Stores a [List] of Int32 values at [index],
   ByteBuf setInt32List(int index, List<int> list) {
-    _checkWriteIndex(index, list.length);
+    checkWriteIndex(index, list.length);
     for (int i = 0; i < list.length; i++) {
       setInt32(index, list[i]);
       index += 4;
@@ -1154,7 +1154,7 @@ class ByteBuf {
 
   /// Stores a Uint32 value at [index].
   ByteBuf setUint32(int index, int value) {
-    _checkWriteIndex(index, 4);
+    checkWriteIndex(index, 4);
     _bd.setUint32(index, value, endianness);
     return this;
   }
@@ -1169,7 +1169,7 @@ class ByteBuf {
 
   /// Stores a [List] of Uint32 values at [index].
   ByteBuf setUint32List(int index, List<int> list) {
-    _checkWriteIndex(index, list.length);
+    checkWriteIndex(index, list.length);
     for (int i = 0; i < list.length; i++) {
       setUint32(index, list[i]);
       index += 4;
@@ -1189,7 +1189,7 @@ class ByteBuf {
 
   /// Stores an Int64 values at [index].
   ByteBuf setInt64(int index, int value) {
-    _checkWriteIndex(index, 8);
+    checkWriteIndex(index, 8);
     _bd.setInt64(index, value, endianness);
     return this;
   }
@@ -1204,7 +1204,7 @@ class ByteBuf {
 
   /// Stores a [List] of Int64 values at [index].
   ByteBuf setInt64List(int index, List<int> list) {
-    _checkWriteIndex(index, list.length);
+    checkWriteIndex(index, list.length);
     for (int i = 0; i < list.length; i++) {
       setInt64(index, list[i]);
       index += 8;
@@ -1224,7 +1224,7 @@ class ByteBuf {
 
   /// Stores a Uint64 value at [index].
   ByteBuf setUint64(int index, int value) {
-    _checkWriteIndex(index, 8);
+    checkWriteIndex(index, 8);
     _bd.setUint64(index, value, endianness);
     return this;
   }
@@ -1239,7 +1239,7 @@ class ByteBuf {
 
   /// Stores a [List] of Uint64 values at [index].
   ByteBuf setUint64List(int index, List<int> list) {
-    _checkWriteIndex(index, list.length);
+    checkWriteIndex(index, list.length);
     for (int i = 0; i < list.length; i++) {
       setUint64(index, list[i]);
       index += 8;
@@ -1259,7 +1259,7 @@ class ByteBuf {
 
   /// Stores a Float32 value at [index].
   ByteBuf setFloat32(int index, double value) {
-    _checkWriteIndex(4);
+    checkWriteIndex(4);
     _bd.setFloat32(index, value, endianness);
     return this;
   }
@@ -1274,7 +1274,7 @@ class ByteBuf {
 
   /// Stores a [List] of Float32 values at [index].
   ByteBuf setFloat32List(int index, List<double> list) {
-    _checkWriteIndex(index, list.length);
+    checkWriteIndex(index, list.length);
     for (int i = 0; i < list.length; i++) {
       setFloat32(index, list[i]);
       index += 4;
@@ -1294,7 +1294,7 @@ class ByteBuf {
 
   /// Stores a Float64 value at [index],
   ByteBuf setFloat64(int index, double value) {
-    _checkWriteIndex(8);
+    checkWriteIndex(8);
     _bd.setFloat64(index, value, endianness);
     return this;
   }
@@ -1309,7 +1309,7 @@ class ByteBuf {
 
   /// Stores a [List] of Float64 values at [index].
   ByteBuf setFloat64List(int index, List<double> list) {
-    _checkWriteIndex(index, list.length);
+    checkWriteIndex(index, list.length);
     for (int i = 0; i < list.length; i++) {
       setFloat64(index, list[i]);
       index += 8;
@@ -1332,7 +1332,7 @@ class ByteBuf {
   /// Internal: Store the [String] [value] at [index] in this [ByteBuf].
   int _setString(int index, String value) {
     Uint8List list = UTF8.encode(value);
-    _checkWriteIndex(index, list.length);
+    checkWriteIndex(index, list.length);
     for (int i = 0; i < list.length; i++)
       _bytes[index + i] = list[i];
     return list.length;
@@ -1366,7 +1366,7 @@ class ByteBuf {
   /// UTF-8 string at [index].
   ByteBuf setStringList(int index, List<String> list, [String delimiter = r"\"]) {
     String s = list.join(delimiter);
-    _checkWriteIndex(index, s.length);
+    checkWriteIndex(index, s.length);
     _setString(index, s);
     return this;
   }
@@ -1384,7 +1384,7 @@ class ByteBuf {
 
   //***
   ByteBuf unreadBytes(int length) {
-    _checkWriteIndex(_readIndex, - length);
+    checkWriteIndex(_readIndex, - length);
     _readIndex -= length;
     return this;
   }
@@ -1396,7 +1396,7 @@ class ByteBuf {
   }
 
   ByteBuf unwriteBytes(int length) {
-    _checkWriteIndex(_writeIndex, - length);
+    checkWriteIndex(_writeIndex, - length);
     _writeIndex -= length;
     return this;
   }

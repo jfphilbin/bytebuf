@@ -100,9 +100,9 @@ void main() {
     List<int> ints = [0, -1, 2, -3, 4];
     Int8List int8list = new Int8List.fromList(ints);
     Uint8List bytes = int8list.buffer.asUint8List();
-    ByteBufReader reader = new ByteBufReader(bytes);
+    ByteBufReader buf = new ByteBufReader(bytes);
 
-    Uint8List list = reader.readInt8List(int8list.lengthInBytes);
+    Int8List list = buf.readInt8List(int8list.lengthInBytes);
     print('Int8List = $list');
     expect(list, equals(ints));
   });
@@ -183,10 +183,10 @@ void main() {
     print('int16s: $int16s');
     print('int16list: $int16list');
     print('bytes: $bytes');
-    ByteBufReader reader = new ByteBufReader(bytes);
+    ByteBufReader buf = new ByteBufReader(bytes);
 
     print('int16List.lengthInBytes= ${int16list.lengthInBytes}');
-    Uint16List list = reader.readInt16List(int16list.lengthInBytes);
+    Int16List list = buf.readInt16List(int16list.lengthInBytes);
     print('Int16List = $list');
     expect(list, equals(int16s));
   });
@@ -198,21 +198,21 @@ void main() {
     print('Uint32s: $uint32s');
     print('Uint32list: $uint32list');
     print('bytes: $bytes');
-    ByteBufReader reader = new ByteBufReader(bytes);
+    ByteBufReader buf = new ByteBufReader(bytes);
 
-    int n = reader.readUint32();
+    int n = buf.readUint32();
     print('Uint32 = $n');
     expect(n, equals(uint32s[0]));
 
-    n = reader.readUint32();
+    n = buf.readUint32();
     print('Uint32 = $n');
     expect(n, equals(uint32s[1]));
 
-    n = reader.readUint32();
+    n = buf.readUint32();
     print('Uint32 = $n');
     expect(n, equals(uint32s[2]));
 
-    n = reader.readUint32();
+    n = buf.readUint32();
     print('Uint32 = $n');
     expect(n, equals(uint32s[3]));
   });
@@ -225,10 +225,10 @@ void main() {
     print('int32s: $uint32s');
     print('int32list: $uint32list');
     print('bytes: $bytes');
-    ByteBufReader reader = new ByteBufReader(bytes);
+    ByteBufReader buf = new ByteBufReader(bytes);
 
     print('int32List.lengthInBytes= ${uint32list.lengthInBytes}');
-    Uint32List list = reader.readUint32List(uint32list.lengthInBytes);
+    Uint32List list = buf.readUint32List(uint32list.lengthInBytes);
     print('Uint32List = $list');
     expect(list, equals(uint32s));
   });
@@ -240,21 +240,21 @@ void main() {
     print('int32s: $int32s');
     print('int32list: $int32list');
     print('bytes: $bytes');
-    ByteBufReader reader = new ByteBufReader(bytes);
+    ByteBufReader buf = new ByteBufReader(bytes);
 
-    int n = reader.readInt32();
+    int n = buf.readInt32();
     print('Int32 = $n');
     expect(n, equals(int32s[0]));
 
-    n = reader.readInt32();
+    n = buf.readInt32();
     print('Int32 = $n');
     expect(n, equals(int32s[1]));
 
-    n = reader.readInt32();
+    n = buf.readInt32();
     print('Int32 = $n');
     expect(n, equals(int32s[2]));
 
-    n = reader.readInt32();
+    n = buf.readInt32();
     print('Int32 = $n');
     expect(n, equals(int32s[3]));
   });
@@ -267,10 +267,10 @@ void main() {
     print('int32s: $int32s');
     print('int32list: $int32list');
     print('bytes: $bytes');
-    ByteBufReader reader = new ByteBufReader(bytes);
+    ByteBufReader buf = new ByteBufReader(bytes);
 
     print('int32List.lengthInBytes= ${int32list.lengthInBytes}');
-    Int32List list = reader.readInt32List(int32list.lengthInBytes);
+    Int32List list = buf.readInt32List(int32list.lengthInBytes);
     print('int32List = $list');
     expect(list, equals(int32s));
   });
@@ -282,21 +282,21 @@ void main() {
     print('Uint64s: $uint64s');
     print('Uint64list: $uint64list');
     print('bytes: $bytes');
-    ByteBufReader reader = new ByteBufReader(bytes);
+    ByteBufReader buf = new ByteBufReader(bytes);
 
-    int n = reader.readUint64();
+    int n = buf.readUint64();
     print('Uint64 = $n');
     expect(n, equals(uint64s[0]));
 
-    n = reader.readUint64();
+    n = buf.readUint64();
     print('Uint64 = $n');
     expect(n, equals(uint64s[1]));
 
-    n = reader.readUint64();
+    n = buf.readUint64();
     print('Uint64 = $n');
     expect(n, equals(uint64s[2]));
 
-    n = reader.readUint64();
+    n = buf.readUint64();
     print('Uint64 = $n');
     expect(n, equals(uint64s[3]));
   });
@@ -309,10 +309,10 @@ void main() {
     print('int64s: $uint64s');
     print('int64list: $uint64list');
     print('bytes: $bytes');
-    ByteBufReader reader = new ByteBufReader(bytes);
+    ByteBufReader buf = new ByteBufReader(bytes);
 
     print('int64List.lengthInBytes= ${uint64list.lengthInBytes}');
-    Uint64List list = reader.readUint64List(uint64list.lengthInBytes);
+    Uint64List list = buf.readUint64List(uint64list.lengthInBytes);
     print('UInt64List = $list');
     expect(list, equals(uint64s));
   });
@@ -324,21 +324,21 @@ void main() {
     print('int64s: $int64s');
     print('int64list: $int64list');
     print('bytes: $bytes');
-    ByteBufReader reader = new ByteBufReader(bytes);
+    ByteBufReader buf = new ByteBufReader(bytes);
 
-    int n = reader.readInt64();
+    int n = buf.readInt64();
     print('Int64 = $n');
     expect(n, equals(int64s[0]));
 
-    n = reader.readInt64();
+    n = buf.readInt64();
     print('Int64 = $n');
     expect(n, equals(int64s[1]));
 
-    n = reader.readInt64();
+    n = buf.readInt64();
     print('Int64 = $n');
     expect(n, equals(int64s[2]));
 
-    n = reader.readInt64();
+    n = buf.readInt64();
     print('Int64 = $n');
     expect(n, equals(int64s[3]));
   });
@@ -351,10 +351,10 @@ void main() {
     print('int64s: $int64s');
     print('int64list: $int64list');
     print('bytes: $bytes');
-    ByteBufReader reader = new ByteBufReader(bytes);
+    ByteBufReader buf = new ByteBufReader(bytes);
 
     print('int64List.lengthInBytes= ${int64list.lengthInBytes}');
-    Int64List list = reader.readInt64List(int64list.lengthInBytes);
+    Int64List list = buf.readInt64List(int64list.lengthInBytes);
     print('int64List = $list');
     expect(list, equals(int64s));
   });
@@ -366,17 +366,17 @@ void main() {
     print('float32List: $float32List');
     print('float8List: $float8List');
 
-    ByteBufReader reader = new ByteBufReader(float8List);
-    double a = reader.readFloat32();
+    ByteBufReader buf = new ByteBufReader(float8List);
+    double a = buf.readFloat32();
     print('Float32 = $a');
     expect(a, equals(float32List[0]));
-    a = reader.readFloat32();
+    a = buf.readFloat32();
     print('Float32 = $a');
     expect(a, equals(float32List[1]));
-    a = reader.readFloat32();
+    a = buf.readFloat32();
     print('Float32 = $a');
     expect(a, equals(float32List[2]));
-    a = reader.readFloat32();
+    a = buf.readFloat32();
     print('Float32 = $a');
     expect(a, equals(float32List[3]));
   });
@@ -388,8 +388,8 @@ void main() {
     print('float32List: $float32List');
     print('float8List: $float8List');
 
-    ByteBufReader reader = new ByteBufReader(float8List);
-    Float32List list = reader.readFloat32List(float8List.lengthInBytes);
+    ByteBufReader buf = new ByteBufReader(float8List);
+    Float32List list = buf.readFloat32List(float8List.lengthInBytes);
     print('Float32List = $list');
     expect(list, equals(float32List));
   });
@@ -401,17 +401,17 @@ void main() {
     print('float64List: $float64List');
     print('float8List: $float8List');
 
-    ByteBufReader reader = new ByteBufReader(float8List);
-    double a = reader.readFloat64();
+    ByteBufReader buf = new ByteBufReader(float8List);
+    double a = buf.readFloat64();
     print('Float64 = $a');
     expect(a, equals(float64List[0]));
-    a = reader.readFloat64();
+    a = buf.readFloat64();
     print('Float64 = $a');
     expect(a, equals(float64List[1]));
-    a = reader.readFloat64();
+    a = buf.readFloat64();
     print('Float64 = $a');
     expect(a, equals(float64List[2]));
-    a = reader.readFloat64();
+    a = buf.readFloat64();
     print('Float64 = $a');
     expect(a, equals(float64List[3]));
   });
@@ -423,8 +423,8 @@ void main() {
     print('float64List: $float64List');
     print('float8List: $float8List');
 
-    ByteBufReader reader = new ByteBufReader(float8List);
-    Float64List list = reader.readFloat64List(float8List.lengthInBytes);
+    ByteBufReader buf = new ByteBufReader(float8List);
+    Float64List list = buf.readFloat64List(float8List.lengthInBytes);
     print('Float64List = $list');
     expect(list, equals(float64List));
   });

@@ -48,7 +48,8 @@ class ByteBufReader {
 
   //*** Constructors ***
 
-
+  factory ByteBufReader(Uint8List bytes) =>
+    new ByteBufReader._(bytes, 0, bytes.lengthInBytes, bytes.lengthInBytes);
 
   /// Creates a new readable [ByteBufReader] from the [Uint8List] [bytes].
   factory ByteBufReader.fromByteBuf(ByteBufReader buf, [int offset = 0, int length]) {
@@ -75,9 +76,9 @@ class ByteBufReader {
       new ByteBufReader._(new Uint8List.fromList(list), 0, list.length, list.length);
 
   /// Internal Constructor: Returns a [ByteBufReader] slice from [bytes].
-  ByteBufReader._(Uint8List bytes, int readIndex, int writeIndex, int length)
-      : _bytes = bytes.buffer.asUint8List(readIndex, length),
-        _bd = bytes.buffer.asByteData(readIndex, length),
+  ByteBufReader._(Uint8List bytes, int readIndex, int writeIndex, int lengthInBytes)
+      : _bytes = bytes.buffer.asUint8List(readIndex, lengthInBytes),
+        _bd = bytes.buffer.asByteData(readIndex, lengthInBytes),
         _readIndex = readIndex,
         _writeIndex = writeIndex;
 
@@ -107,7 +108,7 @@ class ByteBufReader {
   int get lengthInBytes => _bytes.lengthInBytes;
 
   /// Checks that the [readIndex] is valid;
-  void _checkReadIndex(int index, [int lengthInBytes = 1]) {
+  void checkReadIndex(int index, [int lengthInBytes = 1]) {
     //print("checkReadIndex: index($index), lengthInBytes($lengthInBytes)");
     //print("checkReadIndex: readIndex($_readIndex), writeIndex($_writeIndex)");
     if ((index < _readIndex) || ((index + lengthInBytes) > writeIndex))
@@ -332,7 +333,7 @@ class ByteBufReader {
 
   /// Returns an [List] of [bool].
   List<bool> getBooleanList(int index, int length) {
-    _checkReadIndex(index, length);
+    checkReadIndex(index, length);
     List<bool> list = new List(length);
     for (int i = 0; i < length; i++)
       list[i] = getBoolean(i);
@@ -342,7 +343,7 @@ class ByteBufReader {
   /// Reads and Returns a [List] of [bool], and advances
   /// the [readIndex] by the number of byte read.
   List<bool> readBooleanList(int length) {
-    _checkReadIndex(_readIndex, length);
+    checkReadIndex(_readIndex, length);
     var list = getBooleanList(_readIndex, length);
     _readIndex += length;
     return list;
@@ -352,7 +353,7 @@ class ByteBufReader {
 
   /// Returns an signed 8-bit integer.
   int getInt8(int index) {
-    _checkReadIndex(index);
+    checkReadIndex(index);
     return _bd.getInt8(index);
   }
 
@@ -366,7 +367,7 @@ class ByteBufReader {
 
   /// Returns an [Int8List] of signed 8-bit integers.
   Int8List getInt8List(int index, int length) {
-    _checkReadIndex(index, length);
+    checkReadIndex(index, length);
     return _bytes.buffer.asInt8List(index, length).sublist(0);
   }
 
@@ -380,7 +381,7 @@ class ByteBufReader {
 
   /// Returns an [Int8List] view of signed 8-bit integers.
   Int8List getInt8ListView(int index, int length) {
-    _checkReadIndex(index, length);
+    checkReadIndex(index, length);
     return _bytes.buffer.asInt8List(index, length);
   }
 
@@ -395,7 +396,7 @@ class ByteBufReader {
 
   /// Returns an unsigned 8-bit integer.
   int getUint8(int index) {
-    _checkReadIndex(index);
+    checkReadIndex(index);
     return _bd.getUint8(index);
   }
 
@@ -408,7 +409,7 @@ class ByteBufReader {
 
   /// Returns an [Uint8List] of unsigned 8-bit integers.
   Uint8List getUint8List(int index, int length) {
-    _checkReadIndex(index, length);
+    checkReadIndex(index, length);
     return _bytes.sublist(index, index + length);
   }
 
@@ -422,7 +423,7 @@ class ByteBufReader {
 
   /// Returns an [Uint8List] view of unsigned 8-bit integers.
   Uint8List getUint8ListSlice(int index, int length) {
-    _checkReadIndex(index, length);
+    checkReadIndex(index, length);
     return _bytes.buffer.asUint8List(index, length);
   }
 
@@ -437,7 +438,7 @@ class ByteBufReader {
 
   /// Returns an unsigned 8-bit integer.
   int getInt16(int index) {
-    _checkReadIndex(index);
+    checkReadIndex(index);
     return _bd.getInt16(index, endianness);
   }
 
@@ -451,7 +452,7 @@ class ByteBufReader {
   /// Returns an [Int16List] of unsigned 8-bit integers.
   /// [length] is the number of elements in the returned list.
   Int16List getInt16List(int index, int length) {
-    _checkReadIndex(index, length * 2);
+    checkReadIndex(index, length * 2);
     if ((index ~/ 2) == 0) {
       return _bytes.buffer.asInt16List(index, length).sublist(0);
     } else {
@@ -472,7 +473,7 @@ class ByteBufReader {
 
   /// Returns an [Int16List] view of unsigned 8-bit integers.
   Int16List getInt16ListSlice(int index, int length) {
-    _checkReadIndex(index, length * 2);
+    checkReadIndex(index, length * 2);
     if ((index ~/ 2) == 0) {
       return _bytes.buffer.asInt16List(index, length);
     } else {
@@ -495,7 +496,7 @@ class ByteBufReader {
 
   /// Returns an unsigned 16-bit integer.
   int getUint16(int index) {
-    _checkReadIndex(index, 2);
+    checkReadIndex(index, 2);
     return _bd.getUint16(index, endianness);
   }
 
@@ -511,7 +512,7 @@ class ByteBufReader {
   /// Returns an [Uint16List] of unsigned 16-bit integers.
   /// [length] is the number of elements in the returned list.
   Uint16List getUint16List(int index, int length) {
-    _checkReadIndex(index, length * 2);
+    checkReadIndex(index, length * 2);
     if ((index ~/ 2) == 0) {
       return _bytes.buffer.asUint16List(index, index + length).sublist(0);
     } else {
@@ -533,7 +534,7 @@ class ByteBufReader {
 
   /// Returns an [Uint16List] view of unsigned 16-bit integers.
   Uint16List getUint16ListSlice(int index, int length) {
-    _checkReadIndex(index, length * 2);
+    checkReadIndex(index, length * 2);
     if ((index ~/ 2) == 0) {
       return _bytes.buffer.asUint16List(index, length);
     } else {
@@ -557,7 +558,7 @@ class ByteBufReader {
 
   /// Returns an signed 32-bit integer.
   int getInt32(int index) {
-    _checkReadIndex(index);
+    checkReadIndex(index);
     return _bd.getInt32(index, endianness);
   }
 
@@ -571,7 +572,7 @@ class ByteBufReader {
   /// Returns an [Int32List] of signed 32-bit integers.
   /// [length] is the number of elements in the returned list.
   Int32List getInt32List(int index, int length) {
-    _checkReadIndex(index, length * 4);
+    checkReadIndex(index, length * 4);
     if ((index ~/ 4) == 0) {
       return _bytes.buffer.asInt32List(index, length).sublist(0);
     } else {
@@ -599,9 +600,9 @@ class ByteBufReader {
 
   /// Returns an [Int32List] view of signed 32-bit integers.
   Int32List getInt32ListSlice(int index, int length) {
-    _checkReadIndex(index, length * 4);
+    checkReadIndex(index, length * 4);
     if ((index ~/ 4) == 0) {
-      _checkReadIndex(index, length * 4);
+      checkReadIndex(index, length * 4);
       return _bytes.buffer.asInt32List(index, length);
     } else {
       // getInt32List(index, length)
@@ -625,7 +626,7 @@ class ByteBufReader {
 
   /// Returns an unsigned 32-bit integer.
   int getUint32(int index) {
-    _checkReadIndex(index);
+    checkReadIndex(index);
     return _bd.getUint32(index, endianness);
   }
 
@@ -639,9 +640,9 @@ class ByteBufReader {
   /// Returns an [Uint32List] of unsigned 32-bit integers.
   /// [length] is the number of elements in the returned list.
   Uint32List getUint32List(int index, int length) {
-    _checkReadIndex(index, length * 4);
+    checkReadIndex(index, length * 4);
     if ((index ~/ 4) == 0) {
-      _checkReadIndex(index, length * 4);
+      checkReadIndex(index, length * 4);
       return _bytes.buffer.asUint32List(index, length).sublist(0);
     } else {
       var list = new Uint32List(length);
@@ -661,10 +662,10 @@ class ByteBufReader {
 
   /// Returns an [Uint32List] view of unsigned 32-bit integers.
   Uint32List getUint32ListSlice(int index, int length) {
-    _checkReadIndex(index, length * 4);
+    checkReadIndex(index, length * 4);
     //return _bytes.buffer.asUint32List(index, length).sublist(0);
     if (index ~/ 4 == 0) {
-      _checkReadIndex(index, length * 4);
+      checkReadIndex(index, length * 4);
       return _bytes.buffer.asUint32List(index, length);
     } else {
       var list = new Uint32List(length);
@@ -686,7 +687,7 @@ class ByteBufReader {
 
   /// Returns an signed 64-bit integer.
   int getInt64(int index) {
-    _checkReadIndex(index);
+    checkReadIndex(index);
     return _bd.getInt64(index, endianness);
   }
 
@@ -700,9 +701,9 @@ class ByteBufReader {
   /// Returns an [Int64List] of signed 64-bit integers.
   /// [length] is the number of elements in the returned list.
   Int64List getInt64List(int index, int length) {
-    _checkReadIndex(index, length * 8);
+    checkReadIndex(index, length * 8);
     if ((index ~/ 8) == 0) {
-      _checkReadIndex(index, length * 8);
+      checkReadIndex(index, length * 8);
       return _bytes.buffer.asInt64List(index, length).sublist(0);
     } else {
       var list = new Int64List(length);
@@ -722,9 +723,9 @@ class ByteBufReader {
 
   /// Returns an [Int64List] view of signed 64-bit integers.
   Int64List getInt64ListSlice(int index, int length) {
-    _checkReadIndex(index, length * 8);
+    checkReadIndex(index, length * 8);
     if ((index ~/ 8) == 0) {
-      _checkReadIndex(index, length * 8);
+      checkReadIndex(index, length * 8);
       return _bytes.buffer.asInt64List(index, length);
     } else {
       var list = new Int64List(length);
@@ -746,7 +747,7 @@ class ByteBufReader {
 
   /// Returns an unsigned 64-bit integer.
   int getUint64(int index) {
-    _checkReadIndex(index);
+    checkReadIndex(index);
     return _bd.getUint64(index, endianness);
   }
 
@@ -761,7 +762,7 @@ class ByteBufReader {
   /// [length] is the number of elements in the returned list.
   Uint64List getUint64List(int index, int length) {
     if ((index ~/ 8) == 0) {
-      _checkReadIndex(index, length * 8);
+      checkReadIndex(index, length * 8);
       return _bytes.buffer.asUint64List(index, length).sublist(0);
     } else {
       var list = new Uint64List(length);
@@ -781,7 +782,7 @@ class ByteBufReader {
 
   /// Returns an [Uint64List] view of unsigned 64-bit integers.
   Uint64List getUint64ListView(int index, int length) {
-    _checkReadIndex(index, length * 8);
+    checkReadIndex(index, length * 8);
     return new Uint64List.view(_bytes.buffer, index, length);
   }
 
@@ -797,7 +798,7 @@ class ByteBufReader {
 
   /// Returns an signed 32-bit floating point number.
   double getFloat32(int index) {
-    _checkReadIndex(index);
+    checkReadIndex(index);
     return _bd.getFloat32(index, endianness);
   }
 
@@ -811,7 +812,7 @@ class ByteBufReader {
   /// Returns an [Float32List] of signed 32-bit floating point numbers.
   /// [length] is the number of elements in the returned list.
   Float32List getFloat32List(int index, int length) {
-    _checkReadIndex(index, length * 4);
+    checkReadIndex(index, length * 4);
     if ((index ~/ 4) == 0) {
       return _bytes.buffer.asFloat32List(index, length).sublist(0);
     } else {
@@ -832,7 +833,7 @@ class ByteBufReader {
 
   /// Returns an [Float32List] view of signed 32-bit floating point numbers.
   Float32List getFloat32ListSlice(int index, int length) {
-    _checkReadIndex(index, length * 4);
+    checkReadIndex(index, length * 4);
     return _bytes.buffer.asFloat32List(index, index + length);
   }
 
@@ -848,7 +849,7 @@ class ByteBufReader {
 
   /// Returns an signed 64-bit floating point number.
   double getFloat64(int index) {
-    _checkReadIndex(index);
+    checkReadIndex(index);
     return _bd.getFloat64(index, endianness);
   }
 
@@ -862,7 +863,7 @@ class ByteBufReader {
   /// Returns an [Float64List] of signed 64-bit floating point numbers.
   /// [length] is the number of elements in the returned list.
   Float64List getFloat64List(int index, int length) {
-    _checkReadIndex(index, length * 8);
+    checkReadIndex(index, length * 8);
     if ((index ~/ 4) == 0) {
       return _bytes.buffer.asFloat64List(index, length).sublist(0);
     } else {
@@ -883,7 +884,7 @@ class ByteBufReader {
 
   /// Returns an [Float64List] view of signed 64-bit floating point numbers.
   Float64List getFloat64Slice(int index, int length) {
-    _checkReadIndex(index, length * 8);
+    checkReadIndex(index, length * 8);
     return _bytes.buffer.asFloat64List(index, length);
   }
 
@@ -902,7 +903,7 @@ class ByteBufReader {
   /// Returns a [String] by decoding the bytes from [offset]
   /// to [length] as a UTF-8 string.
   String getString(int index, int length) {
-    _checkReadIndex(index, length);
+    checkReadIndex(index, length);
     return UTF8.decode(getUint8List(index, length));
   }
 
@@ -918,7 +919,7 @@ class ByteBufReader {
   /// to [length] as a UTF-8 string, and then uses [delimeter] to
   /// separated the [String] into a [List].
   List<String> getStringList(int index, int length, [String delimiter = r"\"]) {
-    _checkReadIndex(index, length);
+    checkReadIndex(index, length);
     var s = UTF8.decode(getUint8List(index, length));
     return s.split(delimiter);
   }
@@ -935,7 +936,7 @@ class ByteBufReader {
 
   //***
   ByteBufReader unreadBytes(int length) {
-    _checkReadIndex(_readIndex, -length);
+    checkReadIndex(_readIndex, -length);
     _readIndex -= length;
     return this;
   }
