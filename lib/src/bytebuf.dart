@@ -9,6 +9,12 @@ import 'dart:convert';
 import 'dart:math' as math;
 import 'dart:typed_data';
 
+//TODO:
+// 1. Put all index checking and moving into same section
+// 2. Aggregate errors in one section
+// 3. Consolidate RangeErrors into internal methods
+
+
 // TODO:
 //  * Finish documentation
 //  * Make buffers Unmodifiable
@@ -47,6 +53,7 @@ class ByteBuf {
   int _writeIndex;
   int _readIndexMark;
 
+
   //*** Constructors ***
 
   /// Creates a new [ByteBuf] of [maxCapacity], where
@@ -55,63 +62,75 @@ class ByteBuf {
     if (lengthInBytes == null)
       lengthInBytes = defaultLengthInBytes;
     if ((lengthInBytes < 0) || (lengthInBytes > maxMaxCapacity))
-      throw new ArgumentError("lengthInBytes: $lengthInBytes "
-          "(expected: 0 <= lengthInBytes <= maxCapacity($maxMaxCapacity)");
-    return new ByteBuf._(new Uint8List(lengthInBytes), 0, 0, lengthInBytes);
+      invalidLength(lengthInBytes);
+    return new ByteBuf.internal(new Uint8List(lengthInBytes), 0, 0, lengthInBytes);
   }
 
   /// Creates a new readable [ByteBuf] from the [Uint8List] [bytes].
   factory ByteBuf.fromByteBuf(ByteBuf buf, [int offset = 0, int length]) {
     length = (length == null) ? buf._bytes.length : length;
     if ((length < 0) || ((offset < 0) || ((buf._bytes.length - offset) < length)))
-      throw new ArgumentError('Invalid offset($offset) or '
-          'length($length) for ${buf._bytes}bytes(length = ${buf._bytes.lengthInBytes}');
-    return new ByteBuf._(buf._bytes, offset, length, length);
+      invalidOffsetOrLength(offset, length, buf._bytes);
+    return new ByteBuf.internal(buf._bytes, offset, length, length);
   }
   /// Creates a new readable [ByteBuf] from the [Uint8List] [bytes].
   factory ByteBuf.fromUint8List(Uint8List bytes, [int offset = 0, int length]) {
     length = (length == null) ? bytes.length : length;
     if ((length < 0) || ((offset < 0) || ((bytes.length - offset) < length)))
-      throw new ArgumentError('Invalid offset($offset) or '
-          'length($length) for $bytes(length = ${bytes.lengthInBytes}');
-    return new ByteBuf._(bytes, offset, length, length);
+      invalidOffsetOrLength(offset, length, bytes);
+    return new ByteBuf.internal(bytes, offset, length, length);
   }
 
   /// Creates a [Uint8List] with the same length as the elements in [list],
   /// and copies over the elements.  Values are truncated to fit in the list
   /// when they are copied, the same way storing values truncates them.
   factory ByteBuf.fromList(List<int> list) =>
-      new ByteBuf._(new Uint8List.fromList(list), 0, list.length, list.length);
+      new ByteBuf.internal(new Uint8List.fromList(list), 0, list.length, list.length);
 
   factory ByteBuf.view(ByteBuf buf, [int offset = 0, int length]) {
     length = (length == null) ? buf._bytes.length : length;
     if ((length < 0) || ((offset < 0) || ((buf._bytes.length - offset) < length)))
-      throw new ArgumentError('Invalid offset($offset) or '
-          'length($length) for ${buf._bytes}bytes(length = ${buf._bytes.lengthInBytes}');
-    return new ByteBuf._(buf._bytes.buffer.asUint8List(offset, length), offset, length, length);
+      invalidOffsetOrLength(offset, length, buf._bytes);
+    return new ByteBuf.internal(buf._bytes.buffer.asUint8List(offset, length), offset, length, length);
   }
 
   /// Internal Constructor: Returns a [ByteBuf] slice from [bytes].
-  ByteBuf._(Uint8List bytes, int readIndex, int writeIndex, int length)
+  /// _Note_: this should only be used by subclasses.
+  ByteBuf.internal(Uint8List bytes, int readIndex, int writeIndex, int length)
       : _bytes = bytes.buffer.asUint8List(readIndex, length),
         _bd = bytes.buffer.asByteData(readIndex, length),
         _readIndex = readIndex,
         _writeIndex = writeIndex;
 
+  //**** Static Errors for Constructors ****
+  static void invalidLength(int lengthInBytes) {
+    throw new ArgumentError(
+        "lengthInBytes: $lengthInBytes (expected: 0 <= lengthInBytes "
+            "<= maxCapacity(${ByteBuf.maxMaxCapacity})");
+  }
+
+  static void invalidOffsetOrLength(int offset, int length, Uint8List bytes) {
+    throw new ArgumentError(
+        'Invalid offset($offset) or length($length) for '
+            '$bytes(length = ${bytes.lengthInBytes}');
+  }
+
+  //**** Methods that Return new [ByteBuf]s.  ****
+
   /// Creates a new [ByteBuf] that is a view of [this].  The underlying
   /// [Uint8List] is shared, and modifications to it will be visible in the original.
   ByteBuf readSlice(int offset, int length) =>
-      new ByteBuf._(_bytes, offset, length, length);
+      new ByteBuf.internal(_bytes, offset, length, length);
 
   /// Creates a new [ByteBuf] that is a view of [this].  The underlying
   /// [Uint8List] is shared, and modifications to it will be visible in the original.
   ByteBuf writeSlice(int offset, int length) =>
-      new ByteBuf._(_bytes, offset, offset, length);
+      new ByteBuf.internal(_bytes, offset, offset, length);
 
   /// Creates a new [ByteBuf] that is a [sublist] of [this].  The underlying
   /// [Uint8List] is shared, and modifications to it will be visible in the original.
   ByteBuf sublist(int start, int end) =>
-      new ByteBuf._(_bytes, start, end - start, end - start);
+      new ByteBuf.internal(_bytes, start, end - start, end - start);
 
 
   //*** Operators ***
@@ -137,13 +156,13 @@ class ByteBuf {
     //print("checkReadIndex: index($index), lengthInBytes($lengthInBytes)");
     //print("checkReadIndex: readIndex($_readIndex), writeIndex($_writeIndex)");
     if ((index < _readIndex) || ((index + lengthInBytes) > writeIndex))
-      indexOutOfBounds(index, "read");
+      indexOutOfBounds(index, "readIndex");
   }
 
   /// Checks that the [writeIndex] is valid;
   void checkWriteIndex(int index, [int lengthInBytes = 1]) {
     if (((index < _writeIndex) || (index + lengthInBytes) >= _bytes.lengthInBytes))
-      indexOutOfBounds(index, "write");
+      indexOutOfBounds(index, "writeIndex");
   }
 
   /// Checks that there are at least [minimumReadableBytes] available.
@@ -227,11 +246,17 @@ class ByteBuf {
   /// Returns [true] if there are readable bytes available, false otherwise.
   bool get isReadable => _writeIndex > _readIndex;
 
+  /// Returns [true] if there are no readable bytes available, false otherwise.
+  bool get isNotReadable => !isReadable;
+
   /// Returns [true] if there are [numBytes] available to read, false otherwise.
   bool hasReadable(int numBytes) => _writeIndex - _readIndex >= numBytes;
 
   /// Returns [true] if there are writable bytes available, false otherwise.
   bool get isWritable => lengthInBytes > _writeIndex;
+
+  /// Returns [true] if there are no writable bytes available, false otherwise.
+  bool get isNotWritable => !isWritable;
 
   /// Returns [true] if there are [numBytes] available to write, false otherwise.
   bool hasWritable(int numBytes) => lengthInBytes - _writeIndex >= numBytes;
@@ -1382,22 +1407,64 @@ class ByteBuf {
     return this;
   }
 
-  //***
+  //*** Index moving operations
+
+  /// Moves the [readIndex] backward in the [readable] part of [this].
   ByteBuf unreadBytes(int length) {
     checkWriteIndex(_readIndex, - length);
     _readIndex -= length;
     return this;
   }
 
+  /// Returns [true] if the [readIndex] is valid, i.e. in the range:
+  /// ```
+  ///   0 <= [readIndex] < [writeIndex]
+  /// ```
+  bool isValidReadIndex(int readIndex) =>
+    ((readIndex >= 0) && (readIndex < writeIndex));
+
+  /// Returns the opposite of [isValidWriteIndex].
+  bool isNotValidReadIndex(int index) => !isValidReadIndex(index);
+
+  /// Moves the [readIndex] forwar , if negative backward, in the
+  /// read buffer.
   ByteBuf skipReadBytes(int length) {
-    _checkReadableBytes(length);
-    _readIndex += length;
+    int index = readIndex + length;
+    //Flush: _checkReadableBytes(length);
+    if (isNotValidReadIndex(index)) {
+      indexOutOfBounds(index, "readIndex");
+    } else {
+      readIndex = index;
+    }
     return this;
   }
 
+    /// Moves the [writeIndex] backward in the [writable] part of [this] [ByteBuf].
   ByteBuf unwriteBytes(int length) {
     checkWriteIndex(_writeIndex, - length);
     _writeIndex -= length;
+    return this;
+  }
+
+  /// Returns [true] if the [writeIndex] is valid, i.e. in the range:
+    /// ```
+    ///   [readIndex] < [writeIndex] <= [lengthInBytes]
+    /// ```
+  bool isValidWriteIndex(int writeIndex) =>
+      ((writeIndex > writeIndex) && (writeIndex < _bytes.lengthInBytes));
+
+  /// Returns the opposite of [isValidWriteIndex].
+  bool isNotValidWriteIndex(int index) => !isValidWriteIndex(index);
+
+  /// Moves the [writeIndex] forward or, if negative backward, in the
+  /// Write buffer.
+  ByteBuf skipWriteBytes(int length) {
+    int index = writeIndex + length;
+    if (isNotValidWriteIndex(index)) {
+      indexOutOfBounds(index, "writeIndex");
+    } else {
+      writeIndex = index;
+    }
     return this;
   }
 
@@ -1439,8 +1506,8 @@ class ByteBuf {
     maxCap: $lengthInBytes
   """;
 
+  /// Utility routine used for debugging.
   void debug() => print(info);
-
 
   @override
   String toString() => 'ByteBuf (rdIdx: $_readIndex, wrIdx: '
@@ -1453,10 +1520,10 @@ class ByteBuf {
     // print("indexOutOfBounds: index($index), type($type)");
     // print("indexOutOfBounds: readIndex($_readIndex), writeIndex($_writeIndex)");
     String s;
-    if (type == "read")
+    if (type == "readIndex")
       s = "Invalid Read Index($index): $index "
           "(readIndex($readIndex) <= index($index) < writeIndex($writeIndex)";
-    if (type == "write")
+    if (type == "writeIndex")
       s = "Invalid Write Index($index): $index to ByteBuf($this) with lengthInB "
           "(writeIndex($writeIndex) <= index($index) < capacity(${_bytes.lengthInBytes})";
     throw new RangeError(s);

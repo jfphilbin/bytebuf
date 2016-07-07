@@ -37,7 +37,7 @@ class ByteBufWriter extends ByteBufReader {
 
   //TODO: fix this
   ByteBufWriter._(Uint8List bytes, [int readIndex = 0, int writeIndex = 0, lengthInBytes])
-      : super._(bytes, readIndex, writeIndex, lengthInBytes);
+      : super.internal(bytes, readIndex, writeIndex, lengthInBytes);
 
   //*** Operators ***
 

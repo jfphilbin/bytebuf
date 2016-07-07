@@ -49,7 +49,7 @@ class ByteBufReader {
   //*** Constructors ***
 
   factory ByteBufReader(Uint8List bytes) =>
-    new ByteBufReader._(bytes, 0, bytes.lengthInBytes, bytes.lengthInBytes);
+    new ByteBufReader.internal(bytes, 0, bytes.lengthInBytes, bytes.lengthInBytes);
 
   /// Creates a new readable [ByteBufReader] from the [Uint8List] [bytes].
   factory ByteBufReader.fromByteBuf(ByteBufReader buf, [int offset = 0, int length]) {
@@ -57,7 +57,7 @@ class ByteBufReader {
     if ((length < 0) || ((offset < 0) || ((buf._bytes.length - offset) < length)))
       throw new ArgumentError('Invalid offset($offset) or '
           'length($length) for ${buf._bytes}bytes(length = ${buf._bytes.lengthInBytes}');
-    return new ByteBufReader._(buf._bytes, offset, length, length);
+    return new ByteBufReader.internal(buf._bytes, offset, length, length);
   }
 
   /// Creates a new readable [ByteBufReader] from the [Uint8List] [bytes].
@@ -66,17 +66,17 @@ class ByteBufReader {
     if ((length < 0) || ((offset < 0) || ((bytes.length - offset) < length)))
       throw new ArgumentError('Invalid offset($offset) or '
           'length($length) for $bytes(length = ${bytes.lengthInBytes}');
-    return new ByteBufReader._(bytes, offset, length, length);
+    return new ByteBufReader.internal(bytes, offset, length, length);
   }
 
   /// Creates a [Uint8List] with the same length as the elements in [list],
   /// and copies over the elements.  Values are truncated to fit in the list
   /// when they are copied, the same way storing values truncates them.
   factory ByteBufReader.fromList(List<int> list) =>
-      new ByteBufReader._(new Uint8List.fromList(list), 0, list.length, list.length);
+      new ByteBufReader.internal(new Uint8List.fromList(list), 0, list.length, list.length);
 
   /// Internal Constructor: Returns a [ByteBufReader] slice from [bytes].
-  ByteBufReader._(Uint8List bytes, int readIndex, int writeIndex, int lengthInBytes)
+  ByteBufReader.internal(Uint8List bytes, int readIndex, int writeIndex, int lengthInBytes)
       : _bytes = bytes.buffer.asUint8List(readIndex, lengthInBytes),
         _bd = bytes.buffer.asByteData(readIndex, lengthInBytes),
         _readIndex = readIndex,
@@ -85,17 +85,17 @@ class ByteBufReader {
   /// Creates a new [ByteBufReader] that is a view of [this].  The underlying
   /// [Uint8List] is shared, and modifications to it will be visible in the original.
   ByteBufReader readSlice(int offset, int length) =>
-      new ByteBufReader._(_bytes, offset, length, length);
+      new ByteBufReader.internal(_bytes, offset, length, length);
 
   /// Creates a new [ByteBufReader] that is a view of [this].  The underlying
   /// [Uint8List] is shared, and modifications to it will be visible in the original.
   ByteBufReader slice(int offset, int length) =>
-      new ByteBufReader._(_bytes, offset, offset, length);
+      new ByteBufReader.internal(_bytes, offset, offset, length);
 
   /// Creates a new [ByteBufReader] that is a [sublist] of [this].  The underlying
   /// [Uint8List] is shared, and modifications to it will be visible in the original.
   ByteBufReader sublist(int start, int end) =>
-      new ByteBufReader._(_bytes, start, end - start, end - start);
+      new ByteBufReader.internal(_bytes, start, end - start, end - start);
 
   @override
   bool operator ==(Object object) =>
