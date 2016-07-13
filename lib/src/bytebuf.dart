@@ -3,11 +3,13 @@
 // that can be found in the LICENSE file.
 // Author: Jim Philbin <jfphilbin@gmail.edu>
 // See the AUTHORS file for other contributors.
-library odw.sdk.utilities.bytebuf.bytebuf_base;
+library odw.sdk.utilities.bytebuf.bytebuf;
 
 import 'dart:convert';
 import 'dart:math' as math;
 import 'dart:typed_data';
+
+import 'package:logger/server_logger.dart';
 
 //TODO:
 // 1. Put all index checking and moving into same section
@@ -46,6 +48,7 @@ class ByteBuf {
   static const defaultMaxCapacity = 1 * _MB;
   static const maxMaxCapacity = 2 * _GB;
   static const endianness = Endianness.LITTLE_ENDIAN;
+  static final log = new Logger('ByteBuf');
 
   Uint8List _bytes;
   ByteData _bd;
@@ -153,8 +156,8 @@ class ByteBuf {
 
   /// Checks that the [readIndex] is valid;
   void checkReadIndex(int index, [int lengthInBytes = 1]) {
-    //print("checkReadIndex: index($index), lengthInBytes($lengthInBytes)");
-    //print("checkReadIndex: readIndex($_readIndex), writeIndex($_writeIndex)");
+   // print("checkReadIndex: index($index), lengthInBytes($lengthInBytes)");
+   // print("checkReadIndex: readIndex($_readIndex), writeIndex($_writeIndex)");
     if ((index < _readIndex) || ((index + lengthInBytes) > writeIndex))
       indexOutOfBounds(index, "readIndex");
   }
@@ -244,7 +247,7 @@ class ByteBuf {
   int get capacity => _bytes.lengthInBytes;
 
   /// Returns [true] if there are readable bytes available, false otherwise.
-  bool get isReadable => _writeIndex > _readIndex;
+  bool get isReadable =>  _readIndex < _writeIndex;
 
   /// Returns [true] if there are no readable bytes available, false otherwise.
   bool get isNotReadable => !isReadable;
@@ -930,12 +933,15 @@ class ByteBuf {
   /// to [length] as a UTF-8 string.
   String getString(int index, int length) {
     checkReadIndex(index, length);
-    return UTF8.decode(getUint8List(index, length));
+    String s = UTF8.decode(getUint8List(index, length), allowMalformed: false);
+    //return getUint8List(index, length).toString();
+    return s;
   }
 
   /// Returns a [String] by decoding the bytes from [readIndex]
   /// to [length] as a UTF-8 string, and advances the [readIndex] by [length].
   String readString(int length) {
+    if (length == 0) return "";
     var s = getString(_readIndex, length);
     _readIndex += length;
     return s;
@@ -946,7 +952,7 @@ class ByteBuf {
   /// separated the [String] into a [List].
   List<String> getStringList(int index, int length, [String delimiter = r"\"]) {
     checkReadIndex(index, length);
-    var s = UTF8.decode(getUint8List(index, length));
+    String s = UTF8.decode(getUint8List(index, length));
     return s.split(delimiter);
   }
 
@@ -1411,7 +1417,7 @@ class ByteBuf {
 
   /// Moves the [readIndex] backward in the [readable] part of [this].
   ByteBuf unreadBytes(int length) {
-    checkWriteIndex(_readIndex, - length);
+    checkReadIndex(_readIndex, - length);
     _readIndex -= length;
     return this;
   }
@@ -1515,15 +1521,18 @@ class ByteBuf {
 
   //*** Error Methods ***
 
-  ///
+  //TODO: make this two different methods
   void indexOutOfBounds(int index, String type) {
-    // print("indexOutOfBounds: index($index), type($type)");
-    // print("indexOutOfBounds: readIndex($_readIndex), writeIndex($_writeIndex)");
+     //print("indexOutOfBounds: index($index), type($type)");
+     //print("indexOutOfBounds: readIndex($_readIndex), writeIndex($_writeIndex)");
     String s;
     if (type == "readIndex")
+      log.error("indexOutOfBounds: readIndex($_readIndex) <= index($index) < writeIndex"
+                 "($_writeIndex)");
       s = "Invalid Read Index($index): $index "
           "(readIndex($readIndex) <= index($index) < writeIndex($writeIndex)";
     if (type == "writeIndex")
+      log.error("indexOutOfBounds: writeIndex($_writeIndex) <= index($index) < $lengthInBytes");
       s = "Invalid Write Index($index): $index to ByteBuf($this) with lengthInB "
           "(writeIndex($writeIndex) <= index($index) < capacity(${_bytes.lengthInBytes})";
     throw new RangeError(s);

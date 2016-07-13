@@ -12,6 +12,8 @@ dependencies:
     path: C:/odw/utilities/ascii
   integer:
     path: C:/odw/utilities/integer
+  logger:
+    path: C:/odw/utilities/logger
 
 dev_dependencies:
   test: '>=0.12.0 <0.13.0'
