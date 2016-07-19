@@ -9,7 +9,7 @@ import 'dart:convert';
 import 'dart:math' as math;
 import 'dart:typed_data';
 
-import 'package:logger/server_logger.dart';
+import 'package:logger/server.dart';
 
 //TODO:
 // 1. Put all index checking and moving into same section

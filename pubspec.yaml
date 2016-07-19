@@ -9,11 +9,11 @@ environment:
 
 dependencies:
   ascii:
-    path: C:/odw/utilities/ascii
+    path: C:/odw/sdk/ascii
   integer:
-    path: C:/odw/utilities/integer
+    path: C:/odw/sdk/integer
   logger:
-    path: C:/odw/utilities/logger
+    path: C:/odw/sdk/logger
 
 dev_dependencies:
   test: '>=0.12.0 <0.13.0'
