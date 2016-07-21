@@ -466,7 +466,7 @@ class ByteBuf {
 
   /// Returns an unsigned 8-bit integer.
   int getInt16(int index) {
-    checkReadIndex(index);
+    checkReadIndex(index, 2);
     return _bd.getInt16(index, endianness);
   }
 
@@ -1095,7 +1095,7 @@ class ByteBuf {
 
   /// Stores a [List] of Int16 values at [index].
   ByteBuf setInt16List(int index, List<int> list) {
-    checkWriteIndex(index, list.length);
+    checkWriteIndex(index, list.length * 2);
     for (int i = 0; i < list.length; i++) {
       setInt16(index, list[i]);
       index += 2;
@@ -1130,7 +1130,7 @@ class ByteBuf {
 
   /// Stores a [List] of Uint16 values at [index].
   ByteBuf setUint16List(int index, List<int> list) {
-    checkWriteIndex(index, list.length);
+    checkWriteIndex(index, list.length * 2);
     for (int i = 0; i < list.length; i++) {
       setUint16(index, list[i]);
       index += 2;
@@ -1165,7 +1165,7 @@ class ByteBuf {
 
   /// Stores a [List] of Int32 values at [index],
   ByteBuf setInt32List(int index, List<int> list) {
-    checkWriteIndex(index, list.length);
+    checkWriteIndex(index, list.length * 4);
     for (int i = 0; i < list.length; i++) {
       setInt32(index, list[i]);
       index += 4;
@@ -1200,7 +1200,7 @@ class ByteBuf {
 
   /// Stores a [List] of Uint32 values at [index].
   ByteBuf setUint32List(int index, List<int> list) {
-    checkWriteIndex(index, list.length);
+    checkWriteIndex(index, list.length * 4);
     for (int i = 0; i < list.length; i++) {
       setUint32(index, list[i]);
       index += 4;
@@ -1235,7 +1235,7 @@ class ByteBuf {
 
   /// Stores a [List] of Int64 values at [index].
   ByteBuf setInt64List(int index, List<int> list) {
-    checkWriteIndex(index, list.length);
+    checkWriteIndex(index, list.length * 8);
     for (int i = 0; i < list.length; i++) {
       setInt64(index, list[i]);
       index += 8;
@@ -1270,7 +1270,7 @@ class ByteBuf {
 
   /// Stores a [List] of Uint64 values at [index].
   ByteBuf setUint64List(int index, List<int> list) {
-    checkWriteIndex(index, list.length);
+    checkWriteIndex(index, list.length * 8);
     for (int i = 0; i < list.length; i++) {
       setUint64(index, list[i]);
       index += 8;
@@ -1305,7 +1305,7 @@ class ByteBuf {
 
   /// Stores a [List] of Float32 values at [index].
   ByteBuf setFloat32List(int index, List<double> list) {
-    checkWriteIndex(index, list.length);
+    checkWriteIndex(index, list.length * 4);
     for (int i = 0; i < list.length; i++) {
       setFloat32(index, list[i]);
       index += 4;
@@ -1340,7 +1340,7 @@ class ByteBuf {
 
   /// Stores a [List] of Float64 values at [index].
   ByteBuf setFloat64List(int index, List<double> list) {
-    checkWriteIndex(index, list.length);
+    checkWriteIndex(index, list.length * 8);
     for (int i = 0; i < list.length; i++) {
       setFloat64(index, list[i]);
       index += 8;
@@ -1533,8 +1533,7 @@ class ByteBuf {
           "(readIndex($readIndex) <= index($index) < writeIndex($writeIndex)";
     if (type == "writeIndex")
       log.error("indexOutOfBounds: writeIndex($_writeIndex) <= index($index) < $lengthInBytes");
-      s = "Invalid Write Index($index): $index to ByteBuf($this) with lengthInB "
-          "(writeIndex($writeIndex) <= index($index) < capacity(${_bytes.lengthInBytes})";
+      s = "Invalid Write Index($index): $index \nto ByteBuf($this) with lengthInBytes";
     throw new RangeError(s);
   }
 }
