@@ -10,6 +10,7 @@ library odw.sdk.utils.bytebuf;
 export 'src/bytebuf.dart';
 export 'src/bytebuf_reader.dart';
 export 'src/bytebuf_writer.dart';
+export 'src/compare_bytes.dart';
 
 //TODO: move to appropriate place.
 export 'src/random_list.dart';
