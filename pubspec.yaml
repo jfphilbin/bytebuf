@@ -8,13 +8,12 @@ environment:
   sdk: '>=1.0.0 <2.0.0'
 
 dependencies:
-  ascii:
-    path: C:/odw/sdk/ascii
+ # ascii:
+ #   path: C:/odw/sdk/ascii
   integer:
     path: C:/odw/sdk/integer
   logger:
     path: C:/odw/sdk/logger
-
   args: any
 
 dev_dependencies:

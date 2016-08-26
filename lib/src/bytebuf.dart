@@ -9,7 +9,7 @@ import 'dart:convert';
 import 'dart:math' as math;
 import 'dart:typed_data';
 
-import 'package:logger/server.dart';
+import 'package:logger/logger.dart';
 
 //TODO:
 // 1. Put all index checking and moving into same section
@@ -1526,14 +1526,18 @@ class ByteBuf {
      //print("indexOutOfBounds: index($index), type($type)");
      //print("indexOutOfBounds: readIndex($_readIndex), writeIndex($_writeIndex)");
     String s;
-    if (type == "readIndex")
+    if (type == "readIndex") {
       log.error("indexOutOfBounds: readIndex($_readIndex) <= index($index) < writeIndex"
-                 "($_writeIndex)");
+                    "($_writeIndex)");
       s = "Invalid Read Index($index): $index "
           "(readIndex($readIndex) <= index($index) < writeIndex($writeIndex)";
-    if (type == "writeIndex")
+    } else if (type == "writeIndex") {
       log.error("indexOutOfBounds: writeIndex($_writeIndex) <= index($index) < $lengthInBytes");
       s = "Invalid Write Index($index): $index \nto ByteBuf($this) with lengthInBytes";
+    } else {
+      s = 'Bad type ($type) in Index out of bounds.';
+      log.error(s);
+    }
     throw new RangeError(s);
   }
 }
