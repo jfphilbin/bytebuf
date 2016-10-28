@@ -1,20 +1,20 @@
 name: bytebuf
 description: Buffer utilites for reading and writing byte arrays (Uint8Lists).
-version: 0.3.0
+version: 0.3.1
 author: Jim Philbin <mailto:jfphilbin@gmail.com>
 homepage: https://github.com/OpenDICOMweb/bytebuf
 
 environment:
-  sdk: '>=1.0.0 <2.0.0'
+  sdk: ^1.0.0
 
 dependencies:
- # ascii:
- #   path: C:/odw/sdk/ascii
-  integer:
-    path: C:/odw/sdk/integer
+  # dictionary:
+  #  path: C:/odw/sdk/dictionary
+  #  version: 0.4.1
   logger:
     path: C:/odw/sdk/logger
   args: any
 
 dev_dependencies:
+  benchmark_harness: any
   test: '>=0.12.0 <0.13.0'

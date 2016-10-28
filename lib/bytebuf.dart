@@ -3,7 +3,6 @@
 // that can be found in the LICENSE file.
 // Author: Jim Philbin <jfphilbin@gmail.edu>
 // See the AUTHORS file for other contributors.
-library odw.sdk.utils.bytebuf;
 
 /// Utilities for reading and writing [Uint8List] buffers
 
@@ -11,6 +10,6 @@ export 'src/bytebuf.dart';
 export 'src/bytebuf_reader.dart';
 export 'src/bytebuf_writer.dart';
 export 'src/compare_bytes.dart';
-
-//TODO: move to appropriate place.
 export 'src/random_list.dart';
+//TODO: move to appropriate place.
+

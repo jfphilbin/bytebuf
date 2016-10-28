@@ -6,8 +6,6 @@
 
 import 'dart:typed_data';
 
-
-
 String compareBytes(Uint8List bytes1, Uint8List bytes2) {
   for (int i = 0; i < bytes1.length; i++) {
     if (bytes1[i] != bytes2[i])

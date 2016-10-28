@@ -3,11 +3,11 @@
 // that can be found in the LICENSE file.
 // Author: Jim Philbin <jfphilbin@gmail.edu>
 // See the AUTHORS file for other contributors.
-library odw.sdk.utilities.bytebuf.utils;
 
 import 'dart:typed_data';
 
 //TODO: figure out better names for these
+//TODO: replace these with the Integer constants.
 
 // Constants for [length] of ByteData types.
 const kByteLength = 1;
