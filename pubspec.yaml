@@ -8,9 +8,6 @@ environment:
   sdk: ^1.0.0
 
 dependencies:
-  # dictionary:
-  #  path: C:/odw/sdk/dictionary
-  #  version: 0.4.1
   logger:
     path: C:/odw/sdk/logger
   args: any
